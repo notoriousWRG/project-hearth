@@ -1,7 +1,18 @@
+import type { User } from '../shared/types.js';
 import { users as usersApi } from './utils/api.js';
 import { renderUserSelector, handleUserSelected } from './components/UserSelector.js';
 import { applyTheme } from './utils/theme.js';
 import { loadActiveUserId } from './utils/userState.js';
+import { createParentDashboard } from './views/ParentDashboard.js';
+
+function showDashboard(app: HTMLElement, user: User): void {
+  app.innerHTML = '';
+  if (user.type === 'parent') {
+    app.appendChild(createParentDashboard(user.id));
+  } else {
+    app.innerHTML = `<p>Child dashboard coming soon (M6).</p>`;
+  }
+}
 
 async function init(): Promise<void> {
   applyTheme('clean');
@@ -16,7 +27,7 @@ async function init(): Promise<void> {
       const user = allUsers.find((u) => u.id === savedId);
       if (user) {
         handleUserSelected(user);
-        app.innerHTML = `<p>Welcome back, ${user.name}!</p>`;
+        showDashboard(app, user);
         return;
       }
     } catch {
@@ -28,7 +39,8 @@ async function init(): Promise<void> {
     const allUsers = await usersApi.list();
     const selector = renderUserSelector(allUsers, (user) => {
       handleUserSelected(user);
-      app.innerHTML = `<p>Hello, ${user.name}!</p>`;
+      app.innerHTML = '';
+      showDashboard(app, user);
     });
     app.appendChild(selector);
   } catch (err) {
