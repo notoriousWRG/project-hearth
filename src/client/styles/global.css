@@ -1,0 +1,60 @@
+@import './themes/clean.css';
+@import './themes/farmstead.css';
+@import './themes/whimsy.css';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-family: var(--font-body);
+  font-size: 16px;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+body {
+  min-height: 100dvh;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-heading);
+  color: var(--color-heading);
+}
+
+button {
+  cursor: pointer;
+  font-family: var(--font-body);
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 0.5rem 1.25rem;
+  background-color: var(--color-accent);
+  color: var(--color-on-accent);
+  transition: opacity 0.15s ease;
+}
+
+button:hover {
+  opacity: 0.88;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+a {
+  color: var(--color-link);
+}
+
+#app {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 1rem;
+}

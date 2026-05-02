@@ -1,0 +1,25 @@
+/* Whimsy theme — playful, colorful, kid-friendly */
+[data-theme='whimsy'] {
+  --color-bg: #fef9ff;
+  --color-surface: #ffffff;
+  --color-border: #e0c8f0;
+  --color-text: #2d1b4e;
+  --color-heading: #1e0f36;
+  --color-muted: #7a5a9a;
+  --color-accent: #9b4dca;
+  --color-on-accent: #ffffff;
+  --color-link: #7c3aed;
+  --color-success: #22c55e;
+  --color-danger: #ef4444;
+  --color-warning: #f59e0b;
+
+  --font-heading: 'Nunito', 'Comic Sans MS', cursive;
+  --font-body: 'Nunito', system-ui, sans-serif;
+
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+
+  --shadow-sm: 0 2px 6px rgba(155, 77, 202, 0.12);
+  --shadow-md: 0 4px 16px rgba(155, 77, 202, 0.18);
+}

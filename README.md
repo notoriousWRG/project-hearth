@@ -31,14 +31,16 @@ The dev server runs at `http://localhost:5173` and proxies API requests to the E
 
 ## Commands
 
-| Command            | Description                          |
-| ------------------ | ------------------------------------ |
-| `npm test`         | Run all tests                        |
-| `npm run dev`      | Start dev server with hot reload     |
-| `npm run build`    | Production build (output in `dist/`) |
-| `npm run lint`     | Lint and format check                |
-| `npm run db:setup` | Initialize SQLite database           |
-| `npm run db:reset` | Drop and recreate database           |
+| Command               | Description                                        |
+| --------------------- | -------------------------------------------------- |
+| `npm test`            | Run all tests                                      |
+| `npm run dev`         | Start both Express + Vite dev servers concurrently |
+| `npm run dev:server`  | Start Express backend only (port 3001)             |
+| `npm run dev:client`  | Start Vite frontend only (port 5173)               |
+| `npm run build`       | Production build (output in `dist/`)               |
+| `npm run lint`        | Lint and format check                              |
+| `npm run db:setup`    | Initialize SQLite database                         |
+| `npm run db:reset`    | Drop and recreate database                         |
 
 ## Project Structure
 

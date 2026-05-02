@@ -1,0 +1,25 @@
+/* Farmstead theme — warm, earthy, cozy */
+[data-theme='farmstead'] {
+  --color-bg: #f5f0e8;
+  --color-surface: #fffdf7;
+  --color-border: #d4c9b0;
+  --color-text: #3b2f1e;
+  --color-heading: #2a1f10;
+  --color-muted: #7a6a52;
+  --color-accent: #8b5e3c;
+  --color-on-accent: #fffdf7;
+  --color-link: #6b4226;
+  --color-success: #4a7c59;
+  --color-danger: #a03030;
+  --color-warning: #c98b2a;
+
+  --font-heading: Georgia, 'Times New Roman', serif;
+  --font-body: 'Lato', system-ui, sans-serif;
+
+  --radius-sm: 3px;
+  --radius-md: 6px;
+  --radius-lg: 12px;
+
+  --shadow-sm: 0 1px 4px rgba(59, 47, 30, 0.1);
+  --shadow-md: 0 4px 14px rgba(59, 47, 30, 0.15);
+}
