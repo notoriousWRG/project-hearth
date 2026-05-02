@@ -28,8 +28,8 @@ describe('getViewMode', () => {
 });
 
 describe('getThemeForViewMode', () => {
-  it('returns clean for parent mode', () => {
-    expect(getThemeForViewMode('parent')).toBe<Theme>('clean');
+  it('returns farmstead for parent mode', () => {
+    expect(getThemeForViewMode('parent')).toBe<Theme>('farmstead');
   });
 
   it('returns whimsy for child mode', () => {

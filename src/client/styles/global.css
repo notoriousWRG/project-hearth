@@ -1,6 +1,7 @@
 @import './themes/clean.css';
 @import './themes/farmstead.css';
 @import './themes/whimsy.css';
+@import './components.css';
 
 *,
 *::before,
@@ -54,7 +55,7 @@ a {
 }
 
 #app {
-  max-width: 960px;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 1rem;
+  padding: 1.5rem;
 }

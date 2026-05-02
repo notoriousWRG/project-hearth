@@ -19,13 +19,6 @@ function renderChoreItem(chore: Chore, onDelete: () => void): HTMLLIElement {
   title.className = 'chore-item__title';
   title.textContent = chore.title;
 
-  if (chore.is_recurring) {
-    const badge = document.createElement('span');
-    badge.className = 'chore-item__recurring-badge';
-    badge.textContent = '↻';
-    li.appendChild(badge);
-  }
-
   const deleteBtn = document.createElement('button');
   deleteBtn.dataset.action = 'delete';
   deleteBtn.textContent = '×';
@@ -33,6 +26,12 @@ function renderChoreItem(chore: Chore, onDelete: () => void): HTMLLIElement {
 
   li.appendChild(icon);
   li.appendChild(title);
+  if (chore.is_recurring) {
+    const badge = document.createElement('span');
+    badge.className = 'chore-item__recurring-badge';
+    badge.textContent = '↻';
+    li.appendChild(badge);
+  }
   li.appendChild(deleteBtn);
   return li;
 }

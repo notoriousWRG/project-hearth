@@ -12,7 +12,7 @@ export function getViewMode(userType: UserType): ViewMode {
 }
 
 export function getThemeForViewMode(mode: ViewMode): Theme {
-  return mode === 'parent' ? 'clean' : 'whimsy';
+  return mode === 'parent' ? 'farmstead' : 'whimsy';
 }
 
 export function loadActiveUserId(storage: StorageLike = localStorage): number | null {

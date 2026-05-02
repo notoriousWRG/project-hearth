@@ -22,4 +22,15 @@
 
   --shadow-sm: 0 1px 4px rgba(59, 47, 30, 0.1);
   --shadow-md: 0 4px 14px rgba(59, 47, 30, 0.15);
+
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+
+  --color-surface-hover: #ede5d8;
+  --color-completed-text: #9e9082;
+
+  --transition-fast: 0.15s ease;
 }

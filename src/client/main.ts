@@ -15,7 +15,7 @@ function showDashboard(app: HTMLElement, user: User): void {
 }
 
 async function init(): Promise<void> {
-  applyTheme('clean');
+  applyTheme('farmstead');
 
   const app = document.getElementById('app');
   if (!app) return;
