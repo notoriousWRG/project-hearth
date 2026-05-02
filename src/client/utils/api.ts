@@ -30,6 +30,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
 const get = <T>(path: string) => request<T>('GET', path);
 const post = <T>(path: string, body: unknown) => request<T>('POST', path, body);
 const put = <T>(path: string, body: unknown) => request<T>('PUT', path, body);
+const patch = <T>(path: string, body: unknown) => request<T>('PATCH', path, body);
 const del = (path: string) => request<void>('DELETE', path);
 
 export const users = {
@@ -57,21 +58,20 @@ export const chores = {
 };
 
 export const meals = {
-  list: (weekStartDate: string) =>
-    get<MealPlanEntry[]>(`/meal-plan?weekStartDate=${weekStartDate}`),
-  upsert: (data: NewMealPlanEntry) => post<MealPlanEntry>('/meal-plan', data),
+  list: (weekStartDate: string) => get<MealPlanEntry[]>(`/meal-plan?week=${weekStartDate}`),
+  upsert: (data: NewMealPlanEntry) => put<MealPlanEntry>('/meal-plan', data),
   remove: (id: number) => del(`/meal-plan/${id}`),
   generateGrocery: (weekStartDate: string) =>
-    post<GroceryItem[]>('/meal-plan/generate-grocery', { weekStartDate }),
+    post<GroceryItem[]>('/meal-plan/generate-grocery', { week: weekStartDate }),
 };
 
 export const grocery = {
   list: () => get<GroceryItem[]>('/grocery'),
   create: (data: NewGroceryItem) => post<GroceryItem>('/grocery', data),
   update: (id: number, data: Partial<NewGroceryItem>) => put<GroceryItem>(`/grocery/${id}`, data),
-  check: (id: number, checked: boolean) => put<GroceryItem>(`/grocery/${id}/check`, { checked }),
+  check: (id: number, checked: boolean) => patch<GroceryItem>(`/grocery/${id}/check`, { checked }),
   remove: (id: number) => del(`/grocery/${id}`),
-  clearChecked: () => post<{ cleared: number }>('/grocery/clear-checked', {}),
+  clearChecked: () => post<{ deleted: number }>('/grocery/clear-checked', {}),
 };
 
 export const reminders = {
