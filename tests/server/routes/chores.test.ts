@@ -81,19 +81,37 @@ describe('DELETE /api/chores/:id', () => {
 });
 
 describe('POST /api/chores/:id/complete', () => {
-  it('completes a chore and returns completion + streak', async () => {
+  it('completes a chore and returns completion record', async () => {
     const created = await request(app)
       .post('/api/chores')
       .send({ user_id: userId, title: 'Dishes' });
     const res = await request(app).post(`/api/chores/${created.body.id}/complete`);
     expect(res.status).toBe(200);
     expect(res.body.completion.chore_id).toBe(created.body.id);
-    expect(res.body.streak.current_streak).toBe(1);
-    expect(res.body.streak.user_id).toBe(userId);
+    expect(res.body.streak).toBeUndefined();
   });
 
   it('returns 404 for missing chore', async () => {
     const res = await request(app).post('/api/chores/999/complete');
+    expect(res.status).toBe(404);
+  });
+});
+
+describe('DELETE /api/chores/:id/complete', () => {
+  it('marks a completed chore as incomplete', async () => {
+    const created = await request(app)
+      .post('/api/chores')
+      .send({ user_id: userId, title: 'Dishes' });
+    await request(app).post(`/api/chores/${created.body.id}/complete`);
+
+    const res = await request(app).delete(`/api/chores/${created.body.id}/complete`);
+    expect(res.status).toBe(200);
+    expect(res.body.completed).toBe(false);
+    expect(res.body.completed_at).toBeNull();
+  });
+
+  it('returns 404 for missing chore', async () => {
+    const res = await request(app).delete('/api/chores/999/complete');
     expect(res.status).toBe(404);
   });
 });

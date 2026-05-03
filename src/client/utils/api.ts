@@ -65,9 +65,8 @@ export const chores = {
   create: (data: NewChore) => post<Chore>('/chores', data),
   update: (id: number, data: Partial<NewChore>) => put<Chore>(`/chores/${id}`, data),
   complete: (id: number, periodId: string) =>
-    post<{ completion: ChoreCompletion; streak: StreakRecord }>(`/chores/${id}/complete`, {
-      periodId,
-    }),
+    post<{ completion: ChoreCompletion }>(`/chores/${id}/complete`, { periodId }),
+  uncomplete: (id: number) => request<Chore>('DELETE', `/chores/${id}/complete`),
   progress: (userId: number) =>
     get<{
       total: number;

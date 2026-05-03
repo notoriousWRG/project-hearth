@@ -32,6 +32,7 @@ function makeChoreApi(chores: Chore[] = []) {
     update: vi.fn(async (id: number, data: Partial<Chore>) => makeChore({ id, ...data })),
     remove: vi.fn(async () => undefined),
     reorder: vi.fn(async () => chores),
+    uncomplete: vi.fn(async (id: number) => makeChore({ id, completed: false })),
   };
 }
 
@@ -112,6 +113,26 @@ describe('createChoreManagementSection', () => {
 
     await vi.waitFor(() => {
       expect(api.remove).toHaveBeenCalledWith(5);
+    });
+  });
+
+  it('completed chore shows an undo button', async () => {
+    const api = makeChoreApi([makeChore({ id: 5, completed: true })]);
+    const el = createChoreManagementSection(children, api);
+    container.appendChild(el);
+    await vi.waitFor(() => expect(el.querySelector('[data-action="uncomplete"]')).toBeTruthy());
+  });
+
+  it('undo button calls api.uncomplete with the chore id', async () => {
+    const api = makeChoreApi([makeChore({ id: 5, completed: true })]);
+    const el = createChoreManagementSection(children, api);
+    container.appendChild(el);
+    await vi.waitFor(() => expect(el.querySelector('[data-action="uncomplete"]')).toBeTruthy());
+
+    (el.querySelector('[data-action="uncomplete"]') as HTMLButtonElement).click();
+
+    await vi.waitFor(() => {
+      expect(api.uncomplete).toHaveBeenCalledWith(5);
     });
   });
 

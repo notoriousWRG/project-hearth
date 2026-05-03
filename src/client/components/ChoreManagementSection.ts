@@ -6,6 +6,7 @@ interface ChoreManageApi {
   update: (id: number, data: Partial<Chore>) => Promise<Chore>;
   remove: (id: number) => Promise<void>;
   reorder: (userId: number, ids: number[]) => Promise<Chore[]>;
+  uncomplete: (id: number) => Promise<Chore>;
 }
 
 export function createChoreManagementSection(childUsers: User[], api: ChoreManageApi): HTMLElement {
@@ -101,6 +102,17 @@ export function createChoreManagementSection(childUsers: User[], api: ChoreManag
       [ids[i], ids[i + 1]] = [ids[i + 1], ids[i]];
       void api.reorder(activeChildId, ids).then(() => loadChores());
     });
+
+    if (chore.completed) {
+      const undoBtn = document.createElement('button');
+      undoBtn.type = 'button';
+      undoBtn.dataset.action = 'uncomplete';
+      undoBtn.textContent = '✓ Undo';
+      undoBtn.addEventListener('click', () => {
+        void api.uncomplete(chore.id).then(() => loadChores());
+      });
+      li.appendChild(undoBtn);
+    }
 
     const delBtn = document.createElement('button');
     delBtn.type = 'button';

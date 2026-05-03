@@ -27,25 +27,31 @@ export function ensureStreakRecord(db: Database.Database, userId: number): Strea
   return row;
 }
 
-export function updateStreakOnCompletion(
+export function evaluateStreakAtReset(
   db: Database.Database,
   userId: number,
-  todayDate: string,
+  percent: number,
+  threshold: number,
+  periodDate: string,
 ): StreakRecord {
   const record = ensureStreakRecord(db, userId);
   const { last_completed_date, current_streak, longest_streak } = record;
 
-  if (last_completed_date === todayDate) {
-    return record; // Already counted today
+  if (last_completed_date === periodDate) return record;
+
+  let newStreak: number;
+  if (percent < threshold) {
+    newStreak = 0;
+  } else if (last_completed_date === getPreviousDate(periodDate)) {
+    newStreak = current_streak + 1;
+  } else {
+    newStreak = 1;
   }
 
-  const yesterday = getPreviousDate(todayDate);
-  const newStreak = last_completed_date === yesterday ? current_streak + 1 : 1;
   const newLongest = Math.max(longest_streak, newStreak);
-
   db.prepare(
     'UPDATE streak_records SET current_streak = ?, longest_streak = ?, last_completed_date = ? WHERE user_id = ?',
-  ).run(newStreak, newLongest, todayDate, userId);
+  ).run(newStreak, newLongest, periodDate, userId);
 
   return getStreakRecord(db, userId)!;
 }

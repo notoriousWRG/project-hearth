@@ -7,29 +7,54 @@ import {
   updateChore,
   deleteChore,
   completeChore,
+  uncompleteChore,
   getRecurringChores,
   resetRecurringChore,
   reorderChores,
 } from '../models/chores.js';
 import { getAllowanceConfig, getTiers, calculateEarned } from '../models/allowance.js';
-import { updateStreakOnCompletion } from '../models/streaks.js';
+import { evaluateStreakAtReset } from '../models/streaks.js';
 import { getSetting, setSetting } from '../models/settings.js';
 import { shouldReset, getCurrentResetDate } from '../utils/reset.js';
 import { getAllUsers } from '../models/users.js';
 
 function applyRecurringReset(db: Database.Database): void {
   const resetTime = getSetting<string>(db, 'reset_time') ?? '00:00';
-  const lastResetDate = getSetting<string>(db, 'last_reset_date') ?? '1970-01-01';
+  const lastResetDate = getSetting<string>(db, 'last_chore_reset_date') ?? '1970-01-01';
   const now = new Date();
   if (!shouldReset(lastResetDate, resetTime, now)) return;
 
+  const currentPeriod = getCurrentResetDate(now, resetTime);
   const users = getAllUsers(db);
+
+  // Evaluate streaks for the closing period before clearing completed flags
+  if (lastResetDate !== '1970-01-01') {
+    for (const user of users) {
+      const chores = getChoresByUser(db, user.id);
+      const total = chores.length;
+      if (total === 0) continue;
+      const completed = chores.filter((c) => c.completed).length;
+      const percent = Math.round((completed / total) * 100);
+
+      const config = getAllowanceConfig(db, user.id);
+      let threshold = 100;
+      if (config) {
+        const tiers = getTiers(db, config.id);
+        if (tiers.length > 0) {
+          threshold = Math.max(...tiers.map((t) => t.percent_complete));
+        }
+      }
+
+      evaluateStreakAtReset(db, user.id, percent, threshold, lastResetDate);
+    }
+  }
+
   for (const user of users) {
     for (const chore of getRecurringChores(db, user.id)) {
       resetRecurringChore(db, chore.id);
     }
   }
-  setSetting(db, 'last_reset_date', getCurrentResetDate(now, resetTime));
+  setSetting(db, 'last_chore_reset_date', currentPeriod);
 }
 
 export function createChoresRouter(db: Database.Database): Router {
@@ -119,8 +144,16 @@ export function createChoresRouter(db: Database.Database): Router {
     }
     const today = new Date().toISOString().slice(0, 10);
     const completion = completeChore(db, choreId, today);
-    const streak = updateStreakOnCompletion(db, chore.user_id, today);
-    res.json({ completion, streak });
+    res.json({ completion });
+  });
+
+  router.delete('/:id/complete', (req, res) => {
+    const updated = uncompleteChore(db, Number(req.params.id));
+    if (!updated) {
+      res.status(404).json({ error: 'Chore not found' });
+      return;
+    }
+    res.json(updated);
   });
 
   router.post('/reorder', (req, res) => {

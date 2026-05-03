@@ -17,7 +17,7 @@ import { getAllUsers } from '../models/users.js';
 
 function applyRecurringReset(db: Database.Database): void {
   const resetTime = getSetting<string>(db, 'reset_time') ?? '00:00';
-  const lastResetDate = getSetting<string>(db, 'last_reset_date') ?? '1970-01-01';
+  const lastResetDate = getSetting<string>(db, 'last_todo_reset_date') ?? '1970-01-01';
   const now = new Date();
   if (!shouldReset(lastResetDate, resetTime, now)) return;
 
@@ -27,7 +27,7 @@ function applyRecurringReset(db: Database.Database): void {
       resetRecurringTodo(db, todo.id);
     }
   }
-  setSetting(db, 'last_reset_date', getCurrentResetDate(now, resetTime));
+  setSetting(db, 'last_todo_reset_date', getCurrentResetDate(now, resetTime));
 }
 
 export function createTodosRouter(db: Database.Database): Router {

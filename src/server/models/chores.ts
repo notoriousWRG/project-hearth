@@ -171,3 +171,10 @@ export function resetRecurringChore(db: Database.Database, id: number): Chore | 
   db.prepare('UPDATE chores SET completed = 0, completed_at = NULL WHERE id = ?').run(id);
   return getChoreById(db, id);
 }
+
+export function uncompleteChore(db: Database.Database, id: number): Chore | undefined {
+  const chore = getChoreById(db, id);
+  if (!chore) return undefined;
+  db.prepare('UPDATE chores SET completed = 0, completed_at = NULL WHERE id = ?').run(id);
+  return getChoreById(db, id);
+}
