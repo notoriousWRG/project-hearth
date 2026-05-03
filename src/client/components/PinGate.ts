@@ -22,7 +22,7 @@ export function createPinGate(
   input.maxLength = 4;
   input.placeholder = '••••';
   input.autocomplete = 'off';
-  input.required = true;
+  input.required = false;
   form.appendChild(input);
 
   const errorMsg = document.createElement('p');

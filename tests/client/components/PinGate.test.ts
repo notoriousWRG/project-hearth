@@ -63,6 +63,21 @@ describe('createPinGate', () => {
     expect(onSuccess).not.toHaveBeenCalled();
   });
 
+  it('submits with empty input when no PIN is set (server returns valid: true)', async () => {
+    const onSuccess = vi.fn();
+    const verifyPin = vi.fn(async () => ({ valid: true }));
+    const el = createPinGate(onSuccess, vi.fn(), verifyPin);
+    container.appendChild(el);
+
+    const form = el.querySelector('form') as HTMLFormElement;
+    form.dispatchEvent(new Event('submit', { bubbles: true }));
+
+    await vi.waitFor(() => {
+      expect(verifyPin).toHaveBeenCalledWith('');
+      expect(onSuccess).toHaveBeenCalledWith('');
+    });
+  });
+
   it('calls onCancel when cancel button is clicked', () => {
     const onCancel = vi.fn();
     const el = createPinGate(vi.fn(), onCancel, makeVerifyPin(true));
