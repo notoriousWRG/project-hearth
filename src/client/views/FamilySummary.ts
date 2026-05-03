@@ -1,0 +1,146 @@
+import type { SummaryResponse } from '../../shared/types.js';
+import { summary as summaryApi } from '../utils/api.js';
+
+const REFRESH_MS = 60_000;
+
+type SummaryElement = HTMLElement & { destroy: () => void };
+
+export function createFamilySummary(onSelectChild: (userId: number) => void): SummaryElement {
+  const container = document.createElement('div') as SummaryElement;
+  container.className = 'family-summary';
+
+  let wakeLock: WakeLockSentinel | null = null;
+  let timer: number | null = null;
+
+  async function acquireWakeLock(): Promise<void> {
+    if (!('wakeLock' in navigator)) return;
+    try {
+      wakeLock = await navigator.wakeLock.request('screen');
+    } catch {
+      // not available in this context
+    }
+  }
+
+  function render(data: SummaryResponse): void {
+    container.innerHTML = '';
+
+    const now = new Date();
+
+    const header = document.createElement('div');
+    header.className = 'summary-header';
+    header.textContent = now.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+    });
+    container.appendChild(header);
+
+    // Children progress cards
+    if (data.children.length > 0) {
+      const section = document.createElement('div');
+      section.className = 'summary-section summary-children';
+      for (const child of data.children) {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.className = 'summary-child-card';
+        card.addEventListener('click', () => onSelectChild(child.id));
+
+        const nameRow = document.createElement('div');
+        nameRow.className = 'summary-child-name';
+        nameRow.textContent = `${child.icon || '⭐'} ${child.name}`;
+        card.appendChild(nameRow);
+
+        const bar = document.createElement('div');
+        bar.className = 'summary-progress-bar';
+        const fill = document.createElement('div');
+        fill.className = 'summary-progress-fill';
+        fill.style.width = `${child.percent}%`;
+        bar.appendChild(fill);
+        card.appendChild(bar);
+
+        const stats = document.createElement('div');
+        stats.className = 'summary-child-stats';
+        let statsText = `${child.completed} of ${child.total} chores`;
+        if (child.streak > 0) statsText += ` · 🔥 ${child.streak} day streak`;
+        stats.textContent = statsText;
+        card.appendChild(stats);
+
+        section.appendChild(card);
+      }
+      container.appendChild(section);
+    }
+
+    // Today's meals
+    const mealSlots = [
+      { key: 'breakfast' as const, label: 'Breakfast', icon: '🍳' },
+      { key: 'lunch' as const, label: 'Lunch', icon: '🥗' },
+      { key: 'dinner' as const, label: 'Dinner', icon: '🍽️' },
+      { key: 'snack' as const, label: 'Snack', icon: '🍎' },
+    ].filter((s) => data.meals[s.key]);
+
+    if (mealSlots.length > 0) {
+      const section = document.createElement('div');
+      section.className = 'summary-section summary-meals';
+      const heading = document.createElement('div');
+      heading.className = 'summary-section-heading';
+      heading.textContent = "Today's Meals";
+      section.appendChild(heading);
+      for (const slot of mealSlots) {
+        const row = document.createElement('div');
+        row.className = 'summary-meal-row';
+        row.textContent = `${slot.icon} ${slot.label}: ${data.meals[slot.key]}`;
+        section.appendChild(row);
+      }
+      container.appendChild(section);
+    }
+
+    // Reminders
+    if (data.reminders.length > 0) {
+      const section = document.createElement('div');
+      section.className = 'summary-section summary-reminders';
+      const heading = document.createElement('div');
+      heading.className = 'summary-section-heading';
+      heading.textContent = 'Reminders';
+      section.appendChild(heading);
+      for (const reminder of data.reminders) {
+        const item = document.createElement('div');
+        item.className = 'summary-reminder-item';
+        item.textContent = reminder.title;
+        section.appendChild(item);
+      }
+      container.appendChild(section);
+    }
+
+    // Affirmation
+    const affirmation = document.createElement('div');
+    affirmation.className = 'summary-affirmation';
+    affirmation.textContent = `"${data.affirmation}"`;
+    container.appendChild(affirmation);
+  }
+
+  async function refresh(): Promise<void> {
+    try {
+      const data = await summaryApi.get();
+      render(data);
+    } catch {
+      // keep showing last render on network error
+    }
+  }
+
+  container.destroy = (): void => {
+    if (timer !== null) {
+      clearInterval(timer);
+      timer = null;
+    }
+    wakeLock?.release().catch(() => {});
+    wakeLock = null;
+  };
+
+  void acquireWakeLock();
+  void refresh();
+  timer = window.setInterval(() => {
+    if (!document.hidden) void refresh();
+  }, REFRESH_MS);
+
+  return container;
+}

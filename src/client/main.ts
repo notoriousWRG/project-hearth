@@ -9,9 +9,19 @@ import { loadActiveUserId } from './utils/userState.js';
 import { createParentDashboard } from './views/ParentDashboard.js';
 import { createChildDashboard } from './views/ChildDashboard.js';
 import { createSettingsPanel } from './views/SettingsPanel.js';
+import { createFamilySummary } from './views/FamilySummary.js';
 
 const THEME_PARENT_KEY = 'hearth:theme:parent';
 const THEME_CHILD_KEY = 'hearth:theme:child';
+
+type DestroyableElement = HTMLElement & { destroy?: () => void };
+let activeView: DestroyableElement | null = null;
+
+function clearActiveView(app: HTMLElement): void {
+  activeView?.destroy?.();
+  activeView = null;
+  app.innerHTML = '';
+}
 
 function applyStoredTheme(viewMode: 'parent' | 'child'): void {
   const key = viewMode === 'parent' ? THEME_PARENT_KEY : THEME_CHILD_KEY;
@@ -24,24 +34,27 @@ function applyStoredTheme(viewMode: 'parent' | 'child'): void {
 }
 
 function showDashboard(app: HTMLElement, user: User): void {
-  app.innerHTML = '';
+  clearActiveView(app);
   if (user.type === 'parent') {
     applyStoredTheme('parent');
-    app.appendChild(createParentDashboard(user.id));
+    const view = createParentDashboard(user.id);
+    activeView = view;
+    app.appendChild(view);
   } else {
     applyStoredTheme('child');
-    app.appendChild(createChildDashboard(user));
+    const view = createChildDashboard(user);
+    activeView = view;
+    app.appendChild(view);
   }
 }
 
-function showSummary(app: HTMLElement): void {
-  app.innerHTML = '';
+function showSummary(app: HTMLElement, onSelectChild: (userId: number) => void): void {
+  clearActiveView(app);
   applyStoredTheme('parent');
   document.documentElement.setAttribute('data-view', 'parent');
-  const placeholder = document.createElement('div');
-  placeholder.className = 'summary-placeholder';
-  placeholder.innerHTML = '<p>Family summary — coming in M8.</p>';
-  app.appendChild(placeholder);
+  const view = createFamilySummary(onSelectChild);
+  activeView = view;
+  app.appendChild(view);
 }
 
 async function init(): Promise<void> {
@@ -59,7 +72,7 @@ async function init(): Promise<void> {
     const gate = createPinGate(
       (pin) => {
         const children = cachedUsers.filter((u) => u.type === 'child');
-        app.innerHTML = '';
+        clearActiveView(app);
         app.appendChild(createSettingsPanel(pin, children, cachedUsers));
       },
       () => {
@@ -70,7 +83,7 @@ async function init(): Promise<void> {
           nav?.setActive(user.id, false);
           showDashboard(app, user);
         } else {
-          app.innerHTML = '';
+          clearActiveView(app);
           app.appendChild(
             renderUserSelector(cachedUsers, (u) => {
               handleUserSelected(u);
@@ -99,7 +112,13 @@ async function init(): Promise<void> {
       },
       () => {
         nav?.setActive(null, true);
-        showSummary(app!);
+        showSummary(app!, (userId) => {
+          const user = cachedUsers.find((u) => u.id === userId);
+          if (!user) return;
+          handleUserSelected(user);
+          nav?.setActive(user.id, false);
+          showDashboard(app!, user);
+        });
       },
       switchToSettings,
     );

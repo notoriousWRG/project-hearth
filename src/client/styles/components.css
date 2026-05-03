@@ -1212,3 +1212,118 @@
 .grocery-item:hover button[data-action='delete'] {
   opacity: 1;
 }
+
+/* ── Family Summary ──────────────────────────────────────────── */
+
+.family-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.5rem;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.summary-header {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.summary-section {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.summary-section-heading {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-secondary);
+  margin-bottom: 0.25rem;
+}
+
+.summary-children {
+  gap: 1rem;
+}
+
+.summary-child-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  width: 100%;
+  background: transparent;
+  border: none;
+  padding: 0.5rem 0.625rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+  transition: background var(--transition-fast);
+}
+
+.summary-child-card:hover {
+  background: var(--color-hover);
+}
+
+.summary-child-card:active {
+  background: var(--color-border);
+}
+
+.summary-child-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.summary-progress-bar {
+  height: 10px;
+  background: var(--color-border);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.summary-progress-fill {
+  height: 100%;
+  background: var(--color-accent);
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.summary-child-stats {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+.summary-meal-row {
+  font-size: 0.95rem;
+  color: var(--color-text-primary);
+}
+
+.summary-reminder-item {
+  font-size: 0.95rem;
+  color: var(--color-text-primary);
+  padding-left: 0.75rem;
+  position: relative;
+}
+
+.summary-reminder-item::before {
+  content: '·';
+  position: absolute;
+  left: 0;
+  color: var(--color-accent);
+}
+
+.summary-affirmation {
+  font-style: italic;
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+  text-align: center;
+  padding: 0.5rem 0;
+}

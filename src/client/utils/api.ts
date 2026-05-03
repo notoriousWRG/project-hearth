@@ -15,6 +15,7 @@ import type {
   NewGroceryItem,
   Reminder,
   NewReminder,
+  SummaryResponse,
 } from '../../shared/types.js';
 
 async function request<T>(
@@ -106,6 +107,10 @@ export const reminders = {
   update: (id: number, data: Partial<NewReminder>) => put<Reminder>(`/reminders/${id}`, data),
   dismiss: (id: number) => post<Reminder>(`/reminders/${id}/dismiss`, {}),
   remove: (id: number) => del(`/reminders/${id}`),
+};
+
+export const summary = {
+  get: () => get<SummaryResponse>('/summary'),
 };
 
 export const settings = {

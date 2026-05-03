@@ -10,6 +10,7 @@ import { createRemindersRouter } from './routes/reminders.js';
 import { createSettingsRouter } from './routes/settings.js';
 import { createStreaksRouter } from './routes/streaks.js';
 import { createAllowanceRouter } from './routes/allowance.js';
+import { createSummaryRouter } from './routes/summary.js';
 import { requirePin } from './middleware/pin.js';
 
 export function createApp(db: Database.Database): Express {
@@ -25,6 +26,7 @@ export function createApp(db: Database.Database): Express {
   app.use('/api/settings', createSettingsRouter(db));
   app.use('/api/streaks', createStreaksRouter(db));
   app.use('/api/allowance', requirePin(db), createAllowanceRouter(db));
+  app.use('/api/summary', createSummaryRouter(db));
 
   return app;
 }

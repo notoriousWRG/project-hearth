@@ -102,3 +102,28 @@ export type NewChore = Omit<Chore, 'id' | 'created_at' | 'completed_at'>;
 export type NewMealPlanEntry = Omit<MealPlanEntry, 'id'>;
 export type NewGroceryItem = Omit<GroceryItem, 'id'>;
 export type NewReminder = Omit<Reminder, 'id' | 'created_at' | 'dismissed'>;
+
+export interface ChildSummary {
+  id: number;
+  name: string;
+  icon: string;
+  total: number;
+  completed: number;
+  percent: number;
+  earned: number;
+  streak: number;
+}
+
+export interface TodayMeals {
+  breakfast: string;
+  lunch: string;
+  dinner: string;
+  snack: string;
+}
+
+export interface SummaryResponse {
+  children: ChildSummary[];
+  reminders: Reminder[];
+  meals: TodayMeals;
+  affirmation: string;
+}
