@@ -102,7 +102,13 @@ describe('GET /api/chores/progress/:userId', () => {
   it('returns zeros when no chores', async () => {
     const res = await request(app).get(`/api/chores/progress/${userId}`);
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ total: 0, completed: 0, percent: 0, earned: 0 });
+    expect(res.body).toEqual({
+      total: 0,
+      completed: 0,
+      percent: 0,
+      earned: 0,
+      streak_threshold: 7,
+    });
   });
 
   it('calculates percent correctly', async () => {

@@ -44,12 +44,13 @@ export function createChoresRouter(db: Database.Database): Router {
 
     const config = getAllowanceConfig(db, userId);
     let earned = 0;
+    const streak_threshold = config?.streak_threshold ?? 7;
     if (config) {
       const tiers = getTiers(db, config.id);
       earned = calculateEarned(config.amount, tiers, percent);
     }
 
-    res.json({ total, completed, percent, earned });
+    res.json({ total, completed, percent, earned, streak_threshold });
   });
 
   router.get('/', (req, res) => {

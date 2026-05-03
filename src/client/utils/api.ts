@@ -5,6 +5,8 @@ import type {
   NewTodo,
   Chore,
   NewChore,
+  ChoreCompletion,
+  StreakRecord,
   MealPlanEntry,
   NewMealPlanEntry,
   GroceryItem,
@@ -53,8 +55,22 @@ export const chores = {
   create: (data: NewChore) => post<Chore>('/chores', data),
   update: (id: number, data: Partial<NewChore>) => put<Chore>(`/chores/${id}`, data),
   complete: (id: number, periodId: string) =>
-    post<{ chore: Chore; completion: unknown }>(`/chores/${id}/complete`, { periodId }),
+    post<{ completion: ChoreCompletion; streak: StreakRecord }>(`/chores/${id}/complete`, {
+      periodId,
+    }),
+  progress: (userId: number) =>
+    get<{
+      total: number;
+      completed: number;
+      percent: number;
+      earned: number;
+      streak_threshold: number;
+    }>(`/chores/progress/${userId}`),
   remove: (id: number) => del(`/chores/${id}`),
+};
+
+export const streaks = {
+  get: (userId: number) => get<StreakRecord>(`/streaks/${userId}`),
 };
 
 export const meals = {

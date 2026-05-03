@@ -307,6 +307,245 @@
   font-style: italic;
 }
 
+/* ─── Top nav ────────────────────────────────────────────────── */
+
+#top-nav {
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  padding: 0.375rem 1.5rem;
+}
+
+.top-nav {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.top-nav__btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.3rem 0.6rem;
+  min-width: 3.5rem;
+  background: transparent;
+  border: 2px solid transparent;
+  border-radius: var(--radius-md);
+  color: var(--color-muted);
+  transition:
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    background var(--transition-fast);
+}
+
+.top-nav__btn:hover {
+  color: var(--color-text);
+  opacity: 1;
+}
+
+.top-nav__btn--active {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+  background: var(--color-surface-hover);
+}
+
+.top-nav__divider {
+  width: 1px;
+  height: 2rem;
+  background: var(--color-border);
+  margin: 0 0.25rem;
+  flex-shrink: 0;
+}
+
+.top-nav__icon {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.top-nav__label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* ─── Summary placeholder ────────────────────────────────────── */
+
+.summary-placeholder {
+  padding: var(--space-xl);
+  color: var(--color-muted);
+  font-style: italic;
+}
+
+/* ─── Child dashboard ────────────────────────────────────────── */
+
+.child-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  padding: var(--space-lg);
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.child-dashboard__header {
+  text-align: center;
+}
+
+.child-dashboard__greeting {
+  font-family: var(--font-heading);
+  font-size: 2rem;
+  font-weight: normal;
+  color: var(--color-heading);
+}
+
+/* ─── Progress panel ─────────────────────────────────────────── */
+
+.progress-panel {
+  background: var(--color-surface);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  box-shadow: var(--shadow-md);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.progress-panel__count {
+  font-size: 1.125rem;
+  color: var(--color-muted);
+}
+
+.progress-bar {
+  background: var(--color-border);
+  border-radius: var(--radius-lg);
+  height: 1.25rem;
+  overflow: hidden;
+}
+
+.progress-bar__fill {
+  height: 100%;
+  background: var(--color-accent);
+  border-radius: var(--radius-lg);
+  transition: width 0.4s ease;
+}
+
+.progress-panel__earned {
+  font-family: var(--font-heading);
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: var(--color-accent);
+  line-height: 1;
+}
+
+/* ─── Streak display ─────────────────────────────────────────── */
+
+.streak-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+}
+
+.streak-display__count {
+  font-size: 1.125rem;
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+.streak-badge {
+  font-size: 1.25rem;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.streak-badge--active {
+  opacity: 1;
+}
+
+/* ─── Child chore list ───────────────────────────────────────── */
+
+.child-chore-list ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.child-chore-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  width: 100%;
+  min-height: 4rem;
+  padding: var(--space-md) var(--space-lg);
+  background: var(--color-surface);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  text-align: left;
+  transition:
+    border-color 0.15s,
+    background 0.15s,
+    opacity 0.15s;
+}
+
+.child-chore-item:hover:not(.child-chore-item--done) {
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-md);
+  opacity: 1;
+}
+
+.child-chore-item__icon {
+  font-size: 2rem;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.child-chore-item__title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text);
+  flex: 1;
+}
+
+/* Bonus chores get a star accent on the border */
+.child-chore-item--bonus {
+  border-color: var(--color-warning);
+}
+
+/* Completion animation */
+@keyframes pulse-complete {
+  0% {
+    background: var(--color-surface);
+  }
+  40% {
+    background: var(--color-success);
+  }
+  100% {
+    background: var(--color-surface);
+  }
+}
+
+.child-chore-item--completing {
+  animation: pulse-complete 0.4s ease forwards;
+}
+
+/* Done state */
+.child-chore-item--done {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.child-chore-item--done .child-chore-item__title {
+  text-decoration: line-through;
+  color: var(--color-muted);
+}
+
 /* ─── User selector ──────────────────────────────────────────── */
 
 .user-selector {
