@@ -73,6 +73,10 @@ export function setTier(
   return row;
 }
 
+export function deleteAllTiers(db: Database.Database, configId: number): void {
+  db.prepare('DELETE FROM allowance_tiers WHERE config_id = ?').run(configId);
+}
+
 export function calculateEarned(
   amount: number,
   tiers: AllowanceTier[],

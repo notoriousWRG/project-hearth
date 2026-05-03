@@ -307,6 +307,289 @@
   font-style: italic;
 }
 
+/* ─── Settings panel ─────────────────────────────────────────── */
+
+.settings-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.settings-panel__header h1 {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  font-weight: normal;
+  color: var(--color-heading);
+}
+
+.settings-nav {
+  display: flex;
+  gap: 0.125rem;
+  flex-wrap: wrap;
+}
+
+.settings-nav__tab {
+  background: transparent;
+  color: var(--color-muted);
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  padding: 0.5rem 1rem;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  transition:
+    color var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.settings-nav__tab:hover {
+  color: var(--color-text);
+  opacity: 1;
+}
+
+.settings-nav__tab--active {
+  color: var(--color-accent);
+  border-bottom-color: var(--color-accent);
+}
+
+.settings-panel__content {
+  min-height: 300px;
+}
+
+/* ─── Settings sections ──────────────────────────────────────── */
+
+.settings-section {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.settings-section h2 {
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--color-muted);
+}
+
+.settings-section h3 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--color-muted);
+  margin-top: var(--space-sm);
+}
+
+.settings-section label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  color: var(--color-text);
+}
+
+.settings-section input[type='text'],
+.settings-section input[type='number'],
+.settings-section input[type='password'],
+.settings-section input[type='time'] {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+  transition: border-color var(--transition-fast);
+}
+
+.settings-section input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.settings-section__error {
+  color: var(--color-danger);
+  font-size: 0.875rem;
+}
+
+.settings-section__success {
+  color: var(--color-success);
+  font-size: 0.875rem;
+}
+
+/* ─── Child tab strip (shared by chore + allowance sections) ──── */
+
+.settings-child-tabs {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.settings-child-tab {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-muted);
+  padding: 0.3rem 0.75rem;
+  font-size: 0.875rem;
+  transition:
+    border-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.settings-child-tab--active {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+/* ─── Chore rows ─────────────────────────────────────────────── */
+
+.chore-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 0.25rem 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.chore-row:last-child {
+  border-bottom: none;
+}
+
+.chore-row__icon {
+  width: 2.5rem;
+  text-align: center;
+}
+
+.chore-row__title {
+  flex: 1;
+}
+
+/* ─── Tier rows ──────────────────────────────────────────────── */
+
+.tier-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 0.25rem 0;
+}
+
+.tier-row input {
+  width: 4rem;
+}
+
+/* ─── Theme section ──────────────────────────────────────────── */
+
+.settings-theme-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.settings-theme-btns {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.settings-theme-btn {
+  background: transparent;
+  border: 2px solid var(--color-border);
+  color: var(--color-muted);
+  border-radius: var(--radius-md);
+  padding: 0.35rem 0.75rem;
+  font-size: 0.875rem;
+  transition:
+    border-color var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.settings-theme-btn--active {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+
+/* ─── Payout section ─────────────────────────────────────────── */
+
+.payout-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.payout-row:last-child {
+  border-bottom: none;
+}
+
+.payout-row__msg {
+  color: var(--color-success);
+  font-size: 0.875rem;
+}
+
+/* ─── PIN gate ───────────────────────────────────────────────── */
+
+.pin-gate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 40vh;
+  gap: var(--space-lg);
+}
+
+.pin-gate h2 {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  font-weight: normal;
+  color: var(--color-heading);
+}
+
+.pin-gate form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.pin-gate input {
+  font-size: 2rem;
+  text-align: center;
+  letter-spacing: 0.5em;
+  width: 8rem;
+  padding: 0.5rem;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  color: var(--color-text);
+  transition: border-color var(--transition-fast);
+}
+
+.pin-gate input:focus {
+  outline: none;
+  border-color: var(--color-accent);
+}
+
+.pin-gate__error {
+  color: var(--color-danger);
+  font-size: 0.875rem;
+}
+
+.pin-gate__actions {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+/* Settings button pushes to the right */
+.top-nav__divider--right {
+  margin-left: auto;
+}
+
 /* ─── Top nav ────────────────────────────────────────────────── */
 
 #top-nav {

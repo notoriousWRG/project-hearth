@@ -29,43 +29,43 @@ describe('createTopNav', () => {
   });
 
   it('renders a nav element', () => {
-    const el = createTopNav(users, null, vi.fn(), vi.fn());
+    const el = createTopNav(users, null, vi.fn(), vi.fn(), vi.fn());
     expect(el.tagName.toLowerCase()).toBe('nav');
   });
 
   it('renders a button for each user', () => {
-    const el = createTopNav(users, null, vi.fn(), vi.fn());
+    const el = createTopNav(users, null, vi.fn(), vi.fn(), vi.fn());
     const userBtns = el.querySelectorAll('[data-user-id]');
     expect(userBtns.length).toBe(3);
   });
 
   it('renders a summary button', () => {
-    const el = createTopNav(users, null, vi.fn(), vi.fn());
+    const el = createTopNav(users, null, vi.fn(), vi.fn(), vi.fn());
     expect(el.querySelector('[data-summary]')).toBeTruthy();
   });
 
   it('shows user icons and names', () => {
-    const el = createTopNav(users, null, vi.fn(), vi.fn());
+    const el = createTopNav(users, null, vi.fn(), vi.fn(), vi.fn());
     expect(el.textContent).toContain('WR');
     expect(el.textContent).toContain('🌿');
     expect(el.textContent).toContain('Kraft');
   });
 
   it('marks the active user button with --active class', () => {
-    const el = createTopNav(users, 2, vi.fn(), vi.fn());
+    const el = createTopNav(users, 2, vi.fn(), vi.fn(), vi.fn());
     const activeBtn = el.querySelector('.top-nav__btn--active');
     expect(activeBtn).toBeTruthy();
     expect((activeBtn as HTMLElement).dataset.userId).toBe('2');
   });
 
   it('no button is active when activeId is null', () => {
-    const el = createTopNav(users, null, vi.fn(), vi.fn());
+    const el = createTopNav(users, null, vi.fn(), vi.fn(), vi.fn());
     expect(el.querySelector('.top-nav__btn--active')).toBeFalsy();
   });
 
   it('calls onSelectUser with the correct user on click', () => {
     const onSelectUser = vi.fn();
-    const el = createTopNav(users, null, onSelectUser, vi.fn());
+    const el = createTopNav(users, null, onSelectUser, vi.fn(), vi.fn());
     const btn = el.querySelector('[data-user-id="3"]') as HTMLButtonElement;
     btn.click();
     expect(onSelectUser).toHaveBeenCalledWith(users[2]);
@@ -73,13 +73,25 @@ describe('createTopNav', () => {
 
   it('calls onSelectSummary when summary button is clicked', () => {
     const onSelectSummary = vi.fn();
-    const el = createTopNav(users, null, vi.fn(), onSelectSummary);
+    const el = createTopNav(users, null, vi.fn(), onSelectSummary, vi.fn());
     (el.querySelector('[data-summary]') as HTMLButtonElement).click();
     expect(onSelectSummary).toHaveBeenCalled();
   });
 
+  it('renders a settings button', () => {
+    const el = createTopNav(users, null, vi.fn(), vi.fn(), vi.fn());
+    expect(el.querySelector('[data-settings]')).toBeTruthy();
+  });
+
+  it('calls onSelectSettings when settings button is clicked', () => {
+    const onSelectSettings = vi.fn();
+    const el = createTopNav(users, null, vi.fn(), vi.fn(), onSelectSettings);
+    (el.querySelector('[data-settings]') as HTMLButtonElement).click();
+    expect(onSelectSettings).toHaveBeenCalled();
+  });
+
   it('setActive moves the active class to a user button', () => {
-    const el = createTopNav(users, 1, vi.fn(), vi.fn());
+    const el = createTopNav(users, 1, vi.fn(), vi.fn(), vi.fn());
     container.appendChild(el);
 
     el.setActive(3, false);
@@ -89,7 +101,7 @@ describe('createTopNav', () => {
   });
 
   it('setActive with isSummary=true marks the summary button', () => {
-    const el = createTopNav(users, 1, vi.fn(), vi.fn());
+    const el = createTopNav(users, 1, vi.fn(), vi.fn(), vi.fn());
     container.appendChild(el);
 
     el.setActive(null, true);
@@ -99,7 +111,7 @@ describe('createTopNav', () => {
   });
 
   it('setActive with null and isSummary=false clears all active states', () => {
-    const el = createTopNav(users, 1, vi.fn(), vi.fn());
+    const el = createTopNav(users, 1, vi.fn(), vi.fn(), vi.fn());
     container.appendChild(el);
 
     el.setActive(null, false);

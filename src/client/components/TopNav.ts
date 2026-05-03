@@ -7,6 +7,7 @@ export function createTopNav(
   activeId: number | null,
   onSelectUser: (user: User) => void,
   onSelectSummary: () => void,
+  onSelectSettings: () => void,
 ): TopNavElement {
   const nav = document.createElement('nav') as TopNavElement;
   nav.className = 'top-nav';
@@ -52,6 +53,29 @@ export function createTopNav(
     btn.addEventListener('click', () => onSelectUser(user));
     nav.appendChild(btn);
   }
+
+  // Settings button on the right
+  const settingsDivider = document.createElement('div');
+  settingsDivider.className = 'top-nav__divider top-nav__divider--right';
+  nav.appendChild(settingsDivider);
+
+  const settingsBtn = document.createElement('button');
+  settingsBtn.type = 'button';
+  settingsBtn.className = 'top-nav__btn';
+  settingsBtn.dataset.settings = '';
+
+  const settingsIcon = document.createElement('span');
+  settingsIcon.className = 'top-nav__icon';
+  settingsIcon.textContent = '⚙️';
+
+  const settingsLabel = document.createElement('span');
+  settingsLabel.className = 'top-nav__label';
+  settingsLabel.textContent = 'Settings';
+
+  settingsBtn.appendChild(settingsIcon);
+  settingsBtn.appendChild(settingsLabel);
+  settingsBtn.addEventListener('click', onSelectSettings);
+  nav.appendChild(settingsBtn);
 
   function setActive(id: number | null, isSummary = false): void {
     for (const btn of nav.querySelectorAll<HTMLElement>('.top-nav__btn')) {

@@ -7,6 +7,8 @@ import type {
   NewChore,
   ChoreCompletion,
   StreakRecord,
+  AllowanceConfig,
+  AllowanceTier,
   MealPlanEntry,
   NewMealPlanEntry,
   GroceryItem,
@@ -15,10 +17,18 @@ import type {
   NewReminder,
 } from '../../shared/types.js';
 
-async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
+async function request<T>(
+  method: string,
+  path: string,
+  body?: unknown,
+  extraHeaders?: Record<string, string>,
+): Promise<T> {
   const res = await fetch(`/api${path}`, {
     method,
-    headers: body ? { 'Content-Type': 'application/json' } : {},
+    headers: {
+      ...(body ? { 'Content-Type': 'application/json' } : {}),
+      ...extraHeaders,
+    },
     body: body ? JSON.stringify(body) : undefined,
   });
   if (!res.ok) {
@@ -66,6 +76,7 @@ export const chores = {
       earned: number;
       streak_threshold: number;
     }>(`/chores/progress/${userId}`),
+  reorder: (userId: number, ids: number[]) => post<Chore[]>('/chores/reorder', { userId, ids }),
   remove: (id: number) => del(`/chores/${id}`),
 };
 
@@ -99,6 +110,43 @@ export const reminders = {
 };
 
 export const settings = {
-  getAll: () => get<Record<string, unknown>>('/settings'),
-  set: (key: string, value: unknown) => post<void>('/settings', { key, value }),
+  verifyPin: (pin: string) => post<{ valid: boolean }>('/settings/verify-pin', { pin }),
 };
+
+export function createPinSettingsApi(pin: string) {
+  const h = { 'x-pin': pin };
+  return {
+    getAll: () => request<Record<string, unknown>>('GET', '/settings', undefined, h),
+    set: (key: string, value: unknown) => request<void>('PUT', '/settings', { key, value }, h),
+  };
+}
+
+export interface AllowanceSavePayload {
+  amount: number;
+  streak_threshold: number;
+  reset_day: number;
+  period_start: string;
+  tiers: { percent_complete: number; percent_payout: number }[];
+}
+
+export function createPinAllowanceApi(pin: string) {
+  const h = { 'x-pin': pin };
+  return {
+    get: (userId: number) =>
+      request<{ config: AllowanceConfig | null; tiers: AllowanceTier[] }>(
+        'GET',
+        `/allowance/${userId}`,
+        undefined,
+        h,
+      ),
+    save: (userId: number, data: AllowanceSavePayload) =>
+      request<{ config: AllowanceConfig; tiers: AllowanceTier[] }>(
+        'PUT',
+        `/allowance/${userId}`,
+        data,
+        h,
+      ),
+    payout: (userId: number) =>
+      request<AllowanceConfig>('POST', `/allowance/${userId}/payout`, {}, h),
+  };
+}

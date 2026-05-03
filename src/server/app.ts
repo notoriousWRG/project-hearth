@@ -9,6 +9,8 @@ import { createGroceryRouter } from './routes/grocery.js';
 import { createRemindersRouter } from './routes/reminders.js';
 import { createSettingsRouter } from './routes/settings.js';
 import { createStreaksRouter } from './routes/streaks.js';
+import { createAllowanceRouter } from './routes/allowance.js';
+import { requirePin } from './middleware/pin.js';
 
 export function createApp(db: Database.Database): Express {
   const app = express();
@@ -22,6 +24,7 @@ export function createApp(db: Database.Database): Express {
   app.use('/api/reminders', createRemindersRouter(db));
   app.use('/api/settings', createSettingsRouter(db));
   app.use('/api/streaks', createStreaksRouter(db));
+  app.use('/api/allowance', requirePin(db), createAllowanceRouter(db));
 
   return app;
 }
