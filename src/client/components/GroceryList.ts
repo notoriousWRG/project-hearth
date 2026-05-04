@@ -1,4 +1,5 @@
 import type { GroceryItem, GroceryCategory, NewGroceryItem } from '../../shared/types.js';
+import { createErrorBanner } from './ErrorBanner.js';
 
 interface GroceryApi {
   list: () => Promise<GroceryItem[]>;
@@ -46,6 +47,7 @@ export function createGroceryList(api: GroceryApi): HTMLElement {
   const clearBtn = document.createElement('button');
   clearBtn.dataset.action = 'clear-checked';
   clearBtn.textContent = 'Clear checked';
+  clearBtn.setAttribute('aria-label', 'Clear all checked items');
   toolbar.appendChild(clearBtn);
   section.appendChild(toolbar);
 
@@ -142,6 +144,7 @@ export function createGroceryList(api: GroceryApi): HTMLElement {
     const deleteBtn = document.createElement('button');
     deleteBtn.dataset.action = 'delete';
     deleteBtn.textContent = '×';
+    deleteBtn.setAttribute('aria-label', `Delete "${item.name}"`);
     deleteBtn.addEventListener('click', async () => {
       await api.remove(item.id);
       items = items.filter((i) => i.id !== item.id);
@@ -175,10 +178,15 @@ export function createGroceryList(api: GroceryApi): HTMLElement {
     rerender();
   });
 
-  api.list().then((fetched) => {
-    items = fetched;
-    rerender();
-  });
+  api
+    .list()
+    .then((fetched) => {
+      items = fetched;
+      rerender();
+    })
+    .catch(() => {
+      section.insertBefore(createErrorBanner('Could not load grocery list.'), section.firstChild);
+    });
 
   rerender();
   return section;

@@ -1,4 +1,5 @@
 import type { Chore, NewChore } from '../../shared/types.js';
+import { createErrorBanner } from './ErrorBanner.js';
 
 interface ChoreApi {
   list: (userId: number) => Promise<Chore[]>;
@@ -22,6 +23,7 @@ function renderChoreItem(chore: Chore, onDelete: () => void): HTMLLIElement {
   const deleteBtn = document.createElement('button');
   deleteBtn.dataset.action = 'delete';
   deleteBtn.textContent = '×';
+  deleteBtn.setAttribute('aria-label', `Delete "${chore.title}"`);
   deleteBtn.addEventListener('click', onDelete);
 
   li.appendChild(icon);
@@ -39,6 +41,7 @@ function renderChoreItem(chore: Chore, onDelete: () => void): HTMLLIElement {
 export function createChoreList(userId: number, api: ChoreApi): HTMLElement {
   const section = document.createElement('section');
   section.className = 'chore-list';
+  section.setAttribute('aria-label', 'Chores');
 
   const heading = document.createElement('h2');
   heading.textContent = 'Chores';
@@ -66,6 +69,11 @@ export function createChoreList(userId: number, api: ChoreApi): HTMLElement {
 
   let chores: Chore[] = [];
 
+  const spinner = document.createElement('div');
+  spinner.className = 'loading-spinner';
+  spinner.setAttribute('aria-label', 'Loading chores');
+  section.appendChild(spinner);
+
   function rerender() {
     list.innerHTML = '';
     emptyMsg.style.display = chores.length === 0 ? '' : 'none';
@@ -84,16 +92,31 @@ export function createChoreList(userId: number, api: ChoreApi): HTMLElement {
     e.preventDefault();
     const title = input.value.trim();
     if (!title) return;
-    const created = await api.create({ user_id: userId, title });
-    chores = [...chores, created];
-    input.value = '';
-    rerender();
+    try {
+      const created = await api.create({ user_id: userId, title });
+      chores = [...chores, created];
+      input.value = '';
+      rerender();
+    } catch {
+      section.insertBefore(
+        createErrorBanner('Could not add chore. Please try again.'),
+        section.firstChild,
+      );
+    }
   });
 
-  api.list(userId).then((fetched) => {
-    chores = fetched;
-    rerender();
-  });
+  api
+    .list(userId)
+    .then((fetched) => {
+      chores = fetched;
+      rerender();
+    })
+    .catch(() => {
+      section.insertBefore(createErrorBanner('Could not load chores.'), section.firstChild);
+    })
+    .finally(() => {
+      spinner.remove();
+    });
 
   rerender();
   return section;

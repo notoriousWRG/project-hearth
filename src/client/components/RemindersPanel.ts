@@ -1,4 +1,5 @@
 import type { Reminder } from '../../shared/types.js';
+import { createErrorBanner } from './ErrorBanner.js';
 
 interface ReminderApi {
   list: () => Promise<Reminder[]>;
@@ -17,6 +18,7 @@ function renderReminderItem(reminder: Reminder, onDismiss: () => void): HTMLLIEl
   const dismissBtn = document.createElement('button');
   dismissBtn.dataset.action = 'dismiss';
   dismissBtn.textContent = 'Dismiss';
+  dismissBtn.setAttribute('aria-label', `Dismiss: ${reminder.title}`);
   dismissBtn.addEventListener('click', onDismiss);
 
   li.appendChild(title);
@@ -27,6 +29,7 @@ function renderReminderItem(reminder: Reminder, onDismiss: () => void): HTMLLIEl
 export function createRemindersPanel(api: ReminderApi): HTMLElement {
   const section = document.createElement('section');
   section.className = 'reminders-panel';
+  section.setAttribute('aria-label', 'Reminders');
 
   const heading = document.createElement('h2');
   heading.textContent = 'Reminders';
@@ -57,10 +60,15 @@ export function createRemindersPanel(api: ReminderApi): HTMLElement {
     }
   }
 
-  api.list().then((fetched) => {
-    reminders = fetched;
-    rerender();
-  });
+  api
+    .list()
+    .then((fetched) => {
+      reminders = fetched;
+      rerender();
+    })
+    .catch(() => {
+      section.insertBefore(createErrorBanner('Could not load reminders.'), section.firstChild);
+    });
 
   rerender();
   return section;

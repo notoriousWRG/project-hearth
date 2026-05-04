@@ -98,4 +98,34 @@ describe('createChoreList', () => {
       expect(api.remove).toHaveBeenCalledWith(3);
     });
   });
+
+  it('delete button has aria-label with chore title', async () => {
+    const api = makeApi([makeChore({ title: 'Wash dishes' })]);
+    const el = createChoreList(10, api);
+    container.appendChild(el);
+    await vi.waitFor(() => {
+      const btn = el.querySelector('[data-action="delete"]') as HTMLButtonElement;
+      expect(btn.getAttribute('aria-label')).toContain('Wash dishes');
+    });
+  });
+
+  it('section has aria-label', () => {
+    const el = createChoreList(10, makeApi());
+    expect(el.getAttribute('aria-label')).toBeTruthy();
+  });
+
+  it('shows error banner when api.list throws', async () => {
+    const api = {
+      list: vi.fn(async () => {
+        throw new Error('Network error');
+      }),
+      create: vi.fn(),
+      remove: vi.fn(),
+    };
+    const el = createChoreList(10, api);
+    container.appendChild(el);
+    await vi.waitFor(() => {
+      expect(el.querySelector('.error-banner')).toBeTruthy();
+    });
+  });
 });

@@ -111,11 +111,11 @@
     box-shadow var(--transition-fast);
 }
 
-.todo-list form input:focus,
-.chore-list form input:focus {
+.todo-list form input:focus-visible,
+.chore-list form input:focus-visible {
   outline: none;
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px rgba(139, 94, 60, 0.15);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
 }
 
 /* ─── List resets ────────────────────────────────────────────── */
@@ -148,6 +148,9 @@
   flex: 1;
   font-size: 0.9375rem;
   color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .todo-item--completed .todo-item__title {
@@ -231,6 +234,9 @@
   flex: 1;
   font-size: 0.9375rem;
   color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .chore-item__recurring-badge {
@@ -407,9 +413,10 @@
   transition: border-color var(--transition-fast);
 }
 
-.settings-section input:focus {
+.settings-section input:focus-visible {
   outline: none;
   border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
 }
 
 .settings-section__error {
@@ -647,9 +654,10 @@
   transition: border-color var(--transition-fast);
 }
 
-.pin-gate input:focus {
+.pin-gate input:focus-visible {
   outline: none;
   border-color: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
 }
 
 .pin-gate__error {
@@ -1203,10 +1211,10 @@
     box-shadow var(--transition-fast);
 }
 
-.grocery-list__add-form input:focus {
+.grocery-list__add-form input:focus-visible {
   outline: none;
   border-color: var(--color-accent);
-  box-shadow: 0 0 0 3px rgba(139, 94, 60, 0.15);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
 }
 
 .grocery-list__add-form select {
@@ -1417,4 +1425,66 @@
   color: var(--color-text-secondary);
   text-align: center;
   padding: 0.5rem 0;
+}
+
+/* ─── Error banner ───────────────────────────────────────────── */
+
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 0.625rem var(--space-md);
+  background: var(--color-danger);
+  color: #fff;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  margin-bottom: var(--space-md);
+}
+
+.error-banner__message {
+  flex: 1;
+}
+
+.error-banner__dismiss {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 1.25rem;
+  line-height: 1;
+  padding: 0 0.25rem;
+  opacity: 0.75;
+  border-radius: var(--radius-sm);
+  transition: opacity var(--transition-fast);
+}
+
+.error-banner__dismiss:hover {
+  opacity: 1;
+}
+
+/* ─── Child chore title overflow ─────────────────────────────── */
+
+.child-chore-item__title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ─── Child dashboard responsive (Pixel tablet ~600px) ───────── */
+
+@media (max-width: 600px) {
+  .child-dashboard {
+    padding: var(--space-md);
+  }
+
+  .child-chore-item {
+    padding: var(--space-sm) var(--space-md);
+  }
+
+  .child-chore-item__icon {
+    font-size: 1.5rem;
+  }
+
+  .child-chore-item__title {
+    font-size: 1.1rem;
+  }
 }

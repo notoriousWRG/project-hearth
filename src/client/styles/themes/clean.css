@@ -6,9 +6,10 @@
   --color-text: #212529;
   --color-heading: #1a1d20;
   --color-muted: #6c757d;
-  --color-accent: #0d6efd;
+  --color-accent: #0554c2;
   --color-on-accent: #ffffff;
-  --color-link: #0d6efd;
+  --color-link: #0554c2;
+  --color-focus-ring: #0554c2;
   --color-success: #198754;
   --color-danger: #dc3545;
   --color-warning: #ffc107;

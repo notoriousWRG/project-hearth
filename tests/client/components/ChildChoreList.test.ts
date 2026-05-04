@@ -172,4 +172,109 @@ describe('createChildChoreList', () => {
       expect(el.querySelector('.child-chore-item--bonus')).toBeTruthy();
     });
   });
+
+  it('chore button has aria-label with chore title', async () => {
+    const api = makeApi([makeChore({ title: 'Water the garden' })]);
+    const el = createChildChoreList(10, api, vi.fn());
+    container.appendChild(el);
+
+    await vi.waitFor(() => {
+      const btn = el.querySelector('.child-chore-item') as HTMLButtonElement;
+      expect(btn.getAttribute('aria-label')).toBe('Water the garden');
+    });
+  });
+
+  it('completed chore button aria-label includes done', async () => {
+    const api = makeApi([makeChore({ title: 'Feed the chickens', completed: true })]);
+    const el = createChildChoreList(10, api, vi.fn());
+    container.appendChild(el);
+
+    await vi.waitFor(() => {
+      const btn = el.querySelector('.child-chore-item') as HTMLButtonElement;
+      expect(btn.getAttribute('aria-label')).toContain('done');
+    });
+  });
+
+  it('chore button has aria-pressed=false for incomplete chores', async () => {
+    const api = makeApi([makeChore({ completed: false })]);
+    const el = createChildChoreList(10, api, vi.fn());
+    container.appendChild(el);
+
+    await vi.waitFor(() => {
+      const btn = el.querySelector('.child-chore-item') as HTMLButtonElement;
+      expect(btn.getAttribute('aria-pressed')).toBe('false');
+    });
+  });
+
+  it('chore button has aria-pressed=true for completed chores', async () => {
+    const api = makeApi([makeChore({ completed: true })]);
+    const el = createChildChoreList(10, api, vi.fn());
+    container.appendChild(el);
+
+    await vi.waitFor(() => {
+      const btn = el.querySelector('.child-chore-item') as HTMLButtonElement;
+      expect(btn.getAttribute('aria-pressed')).toBe('true');
+    });
+  });
+
+  it('does not fire complete twice when tapped rapidly', async () => {
+    const api = makeApi([makeChore({ id: 5 })]);
+    const el = createChildChoreList(10, api, vi.fn());
+    container.appendChild(el);
+
+    await vi.waitFor(() => expect(el.querySelector('.child-chore-item')).toBeTruthy());
+
+    const btn = el.querySelector('.child-chore-item') as HTMLButtonElement;
+    btn.click();
+    btn.click();
+    btn.click();
+
+    await vi.waitFor(() => expect(btn.classList.contains('child-chore-item--done')).toBe(true));
+    expect(api.complete).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows empty state when no chores', async () => {
+    const api = makeApi([]);
+    const el = createChildChoreList(10, api, vi.fn());
+    container.appendChild(el);
+
+    await vi.waitFor(() => {
+      expect(el.textContent).toContain('No chores');
+    });
+  });
+
+  it('shows error banner when api.list throws', async () => {
+    const api = {
+      list: vi.fn(async () => {
+        throw new Error('Network error');
+      }),
+      complete: vi.fn(),
+    };
+    const el = createChildChoreList(10, api, vi.fn());
+    container.appendChild(el);
+
+    await vi.waitFor(() => {
+      expect(el.querySelector('.error-banner')).toBeTruthy();
+    });
+  });
+
+  it('shows error banner when complete fails', async () => {
+    const api = {
+      list: vi.fn(async () => [makeChore({ id: 5 })]),
+      complete: vi.fn(async () => {
+        throw new Error('Server error');
+      }),
+    };
+    const el = createChildChoreList(10, api, vi.fn());
+    container.appendChild(el);
+
+    await vi.waitFor(() => expect(el.querySelector('.child-chore-item')).toBeTruthy());
+
+    const btn = el.querySelector('.child-chore-item') as HTMLButtonElement;
+    btn.click();
+
+    await vi.waitFor(() => {
+      expect(el.querySelector('.error-banner')).toBeTruthy();
+    });
+  });
 });

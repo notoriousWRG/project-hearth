@@ -16,6 +16,7 @@ export function createTopNav(
   summaryBtn.type = 'button';
   summaryBtn.className = 'top-nav__btn';
   summaryBtn.dataset.summary = '';
+  summaryBtn.setAttribute('aria-label', 'Family summary');
 
   const summaryIcon = document.createElement('span');
   summaryIcon.className = 'top-nav__icon';
@@ -39,6 +40,7 @@ export function createTopNav(
     btn.type = 'button';
     btn.className = 'top-nav__btn';
     btn.dataset.userId = String(user.id);
+    btn.setAttribute('aria-label', user.name);
 
     const icon = document.createElement('span');
     icon.className = 'top-nav__icon';
@@ -63,6 +65,7 @@ export function createTopNav(
   settingsBtn.type = 'button';
   settingsBtn.className = 'top-nav__btn';
   settingsBtn.dataset.settings = '';
+  settingsBtn.setAttribute('aria-label', 'Settings');
 
   const settingsIcon = document.createElement('span');
   settingsIcon.className = 'top-nav__icon';
@@ -80,12 +83,15 @@ export function createTopNav(
   function setActive(id: number | null, isSummary = false): void {
     for (const btn of nav.querySelectorAll<HTMLElement>('.top-nav__btn')) {
       btn.classList.remove('top-nav__btn--active');
+      btn.removeAttribute('aria-current');
     }
     if (isSummary) {
       summaryBtn.classList.add('top-nav__btn--active');
+      summaryBtn.setAttribute('aria-current', 'page');
     } else if (id !== null) {
       const btn = nav.querySelector<HTMLElement>(`[data-user-id="${id}"]`);
       btn?.classList.add('top-nav__btn--active');
+      btn?.setAttribute('aria-current', 'page');
     }
   }
 

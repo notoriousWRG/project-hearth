@@ -76,4 +76,33 @@ describe('createRemindersPanel', () => {
       expect(el.textContent).not.toContain('Buy milk');
     });
   });
+
+  it('dismiss button has aria-label with reminder title', async () => {
+    const api = makeApi([makeReminder({ title: 'Call dentist' })]);
+    const el = createRemindersPanel(api);
+    container.appendChild(el);
+    await vi.waitFor(() => {
+      const btn = el.querySelector('[data-action="dismiss"]') as HTMLButtonElement;
+      expect(btn.getAttribute('aria-label')).toContain('Call dentist');
+    });
+  });
+
+  it('section has aria-label', () => {
+    const el = createRemindersPanel(makeApi());
+    expect(el.getAttribute('aria-label')).toBeTruthy();
+  });
+
+  it('shows error banner when api.list throws', async () => {
+    const api = {
+      list: vi.fn(async () => {
+        throw new Error('Network error');
+      }),
+      dismiss: vi.fn(),
+    };
+    const el = createRemindersPanel(api);
+    container.appendChild(el);
+    await vi.waitFor(() => {
+      expect(el.querySelector('.error-banner')).toBeTruthy();
+    });
+  });
 });

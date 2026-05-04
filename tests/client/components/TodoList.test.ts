@@ -114,4 +114,46 @@ describe('createTodoList', () => {
       expect(el.querySelector('.todo-item--recurring')).toBeTruthy();
     });
   });
+
+  it('complete button has aria-label', async () => {
+    const api = makeApi([makeTodo({ title: 'Buy milk' })]);
+    const el = createTodoList(10, api);
+    container.appendChild(el);
+    await vi.waitFor(() => {
+      const btn = el.querySelector('[data-action="complete"]') as HTMLButtonElement;
+      expect(btn.getAttribute('aria-label')).toContain('Buy milk');
+    });
+  });
+
+  it('delete button has aria-label', async () => {
+    const api = makeApi([makeTodo({ title: 'Buy milk' })]);
+    const el = createTodoList(10, api);
+    container.appendChild(el);
+    await vi.waitFor(() => {
+      const btn = el.querySelector('[data-action="delete"]') as HTMLButtonElement;
+      expect(btn.getAttribute('aria-label')).toContain('Buy milk');
+    });
+  });
+
+  it('section has aria-label', () => {
+    const el = createTodoList(10, makeApi());
+    expect(el.getAttribute('aria-label')).toBeTruthy();
+  });
+
+  it('shows error banner when api.list throws', async () => {
+    const api = {
+      list: vi.fn(async () => {
+        throw new Error('Network error');
+      }),
+      create: vi.fn(),
+      complete: vi.fn(),
+      remove: vi.fn(),
+      update: vi.fn(),
+    };
+    const el = createTodoList(10, api);
+    container.appendChild(el);
+    await vi.waitFor(() => {
+      expect(el.querySelector('.error-banner')).toBeTruthy();
+    });
+  });
 });
