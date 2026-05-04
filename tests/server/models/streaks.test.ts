@@ -2,7 +2,11 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import Database from 'better-sqlite3';
 import { createDb } from '../../../src/server/db/connection.js';
 import { runSchema } from '../../../src/server/db/schema.js';
-import { evaluateStreakAtReset, ensureStreakRecord } from '../../../src/server/models/streaks.js';
+import {
+  evaluateStreakAtReset,
+  ensureStreakRecord,
+  resetStreak,
+} from '../../../src/server/models/streaks.js';
 
 let db: Database.Database;
 let userId: number;
@@ -73,5 +77,35 @@ describe('evaluateStreakAtReset', () => {
   it('breaks streak when percent is 79 and threshold is 80', () => {
     const result = evaluateStreakAtReset(db, userId, 79, 80, '2026-05-02');
     expect(result.current_streak).toBe(0);
+  });
+});
+
+describe('resetStreak', () => {
+  it('sets current_streak to 0', () => {
+    evaluateStreakAtReset(db, userId, 100, 100, '2026-05-01');
+    evaluateStreakAtReset(db, userId, 100, 100, '2026-05-02');
+    const result = resetStreak(db, userId);
+    expect(result.current_streak).toBe(0);
+  });
+
+  it('clears last_completed_date', () => {
+    evaluateStreakAtReset(db, userId, 100, 100, '2026-05-01');
+    const result = resetStreak(db, userId);
+    expect(result.last_completed_date).toBeNull();
+  });
+
+  it('preserves longest_streak', () => {
+    evaluateStreakAtReset(db, userId, 100, 100, '2026-05-01');
+    evaluateStreakAtReset(db, userId, 100, 100, '2026-05-02');
+    evaluateStreakAtReset(db, userId, 100, 100, '2026-05-03');
+    const result = resetStreak(db, userId);
+    expect(result.longest_streak).toBe(3);
+    expect(result.current_streak).toBe(0);
+  });
+
+  it('works when no streak record exists yet', () => {
+    const result = resetStreak(db, userId);
+    expect(result.current_streak).toBe(0);
+    expect(result.last_completed_date).toBeNull();
   });
 });

@@ -56,6 +56,14 @@ export function evaluateStreakAtReset(
   return getStreakRecord(db, userId)!;
 }
 
+export function resetStreak(db: Database.Database, userId: number): StreakRecord {
+  ensureStreakRecord(db, userId);
+  db.prepare(
+    'UPDATE streak_records SET current_streak = 0, last_completed_date = NULL WHERE user_id = ?',
+  ).run(userId);
+  return getStreakRecord(db, userId)!;
+}
+
 function getPreviousDate(isoDate: string): string {
   const d = new Date(isoDate + 'T12:00:00Z');
   d.setUTCDate(d.getUTCDate() - 1);

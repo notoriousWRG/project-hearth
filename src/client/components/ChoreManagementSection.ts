@@ -1,4 +1,4 @@
-import type { Chore, User } from '../../shared/types.js';
+import type { Chore, StreakRecord, User } from '../../shared/types.js';
 
 interface ChoreManageApi {
   list: (userId: number) => Promise<Chore[]>;
@@ -9,7 +9,16 @@ interface ChoreManageApi {
   uncomplete: (id: number) => Promise<Chore>;
 }
 
-export function createChoreManagementSection(childUsers: User[], api: ChoreManageApi): HTMLElement {
+interface StreakApi {
+  get: (userId: number) => Promise<StreakRecord>;
+  reset: (userId: number) => Promise<StreakRecord>;
+}
+
+export function createChoreManagementSection(
+  childUsers: User[],
+  api: ChoreManageApi,
+  streakApi?: StreakApi,
+): HTMLElement {
   const section = document.createElement('section');
   section.className = 'settings-section';
 
@@ -34,6 +43,7 @@ export function createChoreManagementSection(childUsers: User[], api: ChoreManag
 
   let activeChildId = childUsers[0].id;
   let chores: Chore[] = [];
+  let streak: StreakRecord | null = null;
 
   function renderTabs(): void {
     tabStrip.innerHTML = '';
@@ -177,6 +187,31 @@ export function createChoreManagementSection(childUsers: User[], api: ChoreManag
   function renderContent(): void {
     content.innerHTML = '';
 
+    // Streak display
+    if (streakApi && streak) {
+      const streakDiv = document.createElement('div');
+      streakDiv.className = 'chore-streak-info';
+
+      const streakText = document.createElement('span');
+      streakText.textContent = `🔥 ${streak.current_streak} day streak · Best: ${streak.longest_streak}`;
+
+      const resetBtn = document.createElement('button');
+      resetBtn.type = 'button';
+      resetBtn.dataset.action = 'reset-streak';
+      resetBtn.textContent = 'Reset streak';
+      resetBtn.addEventListener('click', () => {
+        resetBtn.disabled = true;
+        void streakApi.reset(activeChildId).then((updated) => {
+          streak = updated;
+          renderContent();
+        });
+      });
+
+      streakDiv.appendChild(streakText);
+      streakDiv.appendChild(resetBtn);
+      content.appendChild(streakDiv);
+    }
+
     // Add form
     const form = document.createElement('form');
     const iconInput = document.createElement('input');
@@ -237,8 +272,11 @@ export function createChoreManagementSection(childUsers: User[], api: ChoreManag
   }
 
   function loadChores(): void {
-    api.list(activeChildId).then((fetched) => {
-      chores = fetched;
+    const choresFetch = api.list(activeChildId);
+    const streakFetch = streakApi ? streakApi.get(activeChildId) : Promise.resolve(null);
+    void Promise.all([choresFetch, streakFetch]).then(([fetchedChores, fetchedStreak]) => {
+      chores = fetchedChores;
+      streak = fetchedStreak;
       renderContent();
     });
   }

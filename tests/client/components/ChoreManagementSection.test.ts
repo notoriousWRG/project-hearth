@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createChoreManagementSection } from '../../../src/client/components/ChoreManagementSection.js';
-import type { Chore, User } from '../../../src/shared/types.js';
+import type { Chore, StreakRecord, User } from '../../../src/shared/types.js';
 
 function makeUser(overrides: Partial<User> = {}): User {
   return { id: 1, name: 'Kraft', type: 'child', icon: '🎨', display_order: 0, ...overrides };
@@ -212,5 +212,80 @@ describe('createChoreManagementSection', () => {
     await vi.waitFor(() => expect(el.querySelector('[data-action="delete"]')).toBeTruthy());
 
     expect(el.querySelector('[data-action="copy-to"]')).toBeNull();
+  });
+});
+
+function makeStreak(overrides: Partial<StreakRecord> = {}): StreakRecord {
+  return {
+    id: 1,
+    user_id: 1,
+    current_streak: 5,
+    longest_streak: 10,
+    last_completed_date: '2026-05-02',
+    ...overrides,
+  };
+}
+
+function makeStreakApi(streak: StreakRecord = makeStreak()) {
+  return {
+    get: vi.fn(async () => streak),
+    reset: vi.fn(async () => makeStreak({ current_streak: 0, last_completed_date: null })),
+  };
+}
+
+describe('createChoreManagementSection — streak', () => {
+  let container: HTMLElement;
+
+  beforeEach(() => {
+    container = document.createElement('div');
+    document.body.appendChild(container);
+  });
+
+  it('shows streak info when streakApi is provided', async () => {
+    const api = makeChoreApi([]);
+    const streakApi = makeStreakApi(makeStreak({ current_streak: 5, longest_streak: 10 }));
+    const el = createChoreManagementSection([children[0]], api, streakApi);
+    container.appendChild(el);
+    await vi.waitFor(() => {
+      expect(el.querySelector('.chore-streak-info')).toBeTruthy();
+      expect(el.querySelector('.chore-streak-info')!.textContent).toContain('5 day streak');
+      expect(el.querySelector('.chore-streak-info')!.textContent).toContain('Best: 10');
+    });
+  });
+
+  it('does not show streak section when streakApi is omitted', async () => {
+    const api = makeChoreApi([]);
+    const el = createChoreManagementSection([children[0]], api);
+    container.appendChild(el);
+    await vi.waitFor(() => expect(el.querySelector('form')).toBeTruthy());
+    expect(el.querySelector('.chore-streak-info')).toBeNull();
+  });
+
+  it('reset button calls streakApi.reset', async () => {
+    const api = makeChoreApi([]);
+    const streakApi = makeStreakApi();
+    const el = createChoreManagementSection([children[0]], api, streakApi);
+    container.appendChild(el);
+    await vi.waitFor(() => expect(el.querySelector('[data-action="reset-streak"]')).toBeTruthy());
+
+    (el.querySelector('[data-action="reset-streak"]') as HTMLButtonElement).click();
+
+    await vi.waitFor(() => {
+      expect(streakApi.reset).toHaveBeenCalledWith(1);
+    });
+  });
+
+  it('updates streak display after reset', async () => {
+    const api = makeChoreApi([]);
+    const streakApi = makeStreakApi(makeStreak({ current_streak: 7, longest_streak: 7 }));
+    const el = createChoreManagementSection([children[0]], api, streakApi);
+    container.appendChild(el);
+    await vi.waitFor(() => expect(el.querySelector('[data-action="reset-streak"]')).toBeTruthy());
+
+    (el.querySelector('[data-action="reset-streak"]') as HTMLButtonElement).click();
+
+    await vi.waitFor(() => {
+      expect(el.querySelector('.chore-streak-info')!.textContent).toContain('0 day streak');
+    });
   });
 });

@@ -84,6 +84,14 @@ export const streaks = {
   get: (userId: number) => get<StreakRecord>(`/streaks/${userId}`),
 };
 
+export function createPinStreaksApi(pin: string) {
+  const h = { 'x-pin': pin };
+  return {
+    get: (userId: number) => get<StreakRecord>(`/streaks/${userId}`),
+    reset: (userId: number) => request<StreakRecord>('POST', `/streaks/${userId}/reset`, {}, h),
+  };
+}
+
 export const meals = {
   list: (weekStartDate: string) => get<MealPlanEntry[]>(`/meal-plan?week=${weekStartDate}`),
   upsert: (data: NewMealPlanEntry) => put<MealPlanEntry>('/meal-plan', data),

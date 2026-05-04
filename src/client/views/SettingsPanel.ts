@@ -3,7 +3,7 @@ import { createChoreManagementSection } from '../components/ChoreManagementSecti
 import { createAllowanceConfigSection } from '../components/AllowanceConfigSection.js';
 import { createUserManagementSection } from '../components/UserManagementSection.js';
 import { applyTheme, THEMES, type Theme } from '../utils/theme.js';
-import { createPinSettingsApi, createPinAllowanceApi } from '../utils/api.js';
+import { createPinSettingsApi, createPinAllowanceApi, createPinStreaksApi } from '../utils/api.js';
 import * as api from '../utils/api.js';
 
 type SettingsTab = 'users' | 'chores' | 'allowance' | 'theme' | 'pin' | 'payout' | 'reset-time';
@@ -29,6 +29,7 @@ export function createSettingsPanel(
 ): HTMLElement {
   const pinSettingsApi = createPinSettingsApi(pin);
   const pinAllowanceApi = createPinAllowanceApi(pin);
+  const pinStreaksApi = createPinStreaksApi(pin);
 
   const view = document.createElement('div');
   view.className = 'settings-panel';
@@ -74,7 +75,7 @@ export function createSettingsPanel(
     if (activeTab === 'users') {
       content.appendChild(createUserManagementSection(api.users));
     } else if (activeTab === 'chores') {
-      content.appendChild(createChoreManagementSection(childUsers, api.chores));
+      content.appendChild(createChoreManagementSection(childUsers, api.chores, pinStreaksApi));
     } else if (activeTab === 'allowance') {
       content.appendChild(createAllowanceConfigSection(childUsers, pinAllowanceApi));
     } else if (activeTab === 'theme') {
