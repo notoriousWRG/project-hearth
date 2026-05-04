@@ -104,6 +104,12 @@ export type NewMealPlanEntry = Omit<MealPlanEntry, 'id'>;
 export type NewGroceryItem = Omit<GroceryItem, 'id'>;
 export type NewReminder = Omit<Reminder, 'id' | 'created_at' | 'dismissed'>;
 
+export interface QuickActionChore {
+  id: number;
+  title: string;
+  icon: string;
+}
+
 export interface ChildSummary {
   id: number;
   name: string;
@@ -113,6 +119,7 @@ export interface ChildSummary {
   percent: number;
   earned: number;
   streak: number;
+  nextChores: QuickActionChore[];
 }
 
 export interface TodayMeals {

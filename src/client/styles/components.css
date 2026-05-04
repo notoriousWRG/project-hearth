@@ -1380,6 +1380,13 @@
 .summary-child-card {
   display: flex;
   flex-direction: column;
+  gap: 0;
+  width: 100%;
+}
+
+.summary-child-header {
+  display: flex;
+  flex-direction: column;
   gap: 0.375rem;
   width: 100%;
   background: transparent;
@@ -1392,11 +1399,11 @@
   transition: background var(--transition-fast);
 }
 
-.summary-child-card:hover {
+.summary-child-header:hover {
   background: var(--color-hover);
 }
 
-.summary-child-card:active {
+.summary-child-header:active {
   background: var(--color-border);
 }
 
@@ -1423,6 +1430,46 @@
 .summary-child-stats {
   font-size: 0.875rem;
   color: var(--color-text-secondary);
+}
+
+.summary-quick-actions {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  padding: 0.375rem 0.625rem 0.5rem;
+  border-top: 1px solid var(--color-border);
+  margin-top: 0.25rem;
+}
+
+.summary-chore-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.375rem 0.625rem;
+  font-size: 0.9rem;
+  color: var(--color-text-primary);
+  cursor: pointer;
+  text-align: left;
+  transition:
+    background var(--transition-fast),
+    opacity var(--transition-fast);
+}
+
+.summary-chore-btn:hover {
+  background: var(--color-hover);
+}
+
+.summary-chore-btn:active {
+  background: var(--color-border);
+}
+
+.summary-chore-btn--completing {
+  opacity: 0.4;
+  pointer-events: none;
 }
 
 .summary-meal-row {

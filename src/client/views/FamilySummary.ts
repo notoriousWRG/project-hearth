@@ -1,5 +1,5 @@
 import type { SummaryResponse } from '../../shared/types.js';
-import { summary as summaryApi } from '../utils/api.js';
+import { summary as summaryApi, chores as choreApi } from '../utils/api.js';
 
 const REFRESH_MS = 60_000;
 
@@ -40,15 +40,19 @@ export function createFamilySummary(onSelectChild: (userId: number) => void): Su
       const section = document.createElement('div');
       section.className = 'summary-section summary-children';
       for (const child of data.children) {
-        const card = document.createElement('button');
-        card.type = 'button';
+        const card = document.createElement('div');
         card.className = 'summary-child-card';
-        card.addEventListener('click', () => onSelectChild(child.id));
+
+        // Clickable header area — navigates to child dashboard
+        const header = document.createElement('button');
+        header.type = 'button';
+        header.className = 'summary-child-header';
+        header.addEventListener('click', () => onSelectChild(child.id));
 
         const nameRow = document.createElement('div');
         nameRow.className = 'summary-child-name';
         nameRow.textContent = `${child.icon || '⭐'} ${child.name}`;
-        card.appendChild(nameRow);
+        header.appendChild(nameRow);
 
         const bar = document.createElement('div');
         bar.className = 'summary-progress-bar';
@@ -56,14 +60,45 @@ export function createFamilySummary(onSelectChild: (userId: number) => void): Su
         fill.className = 'summary-progress-fill';
         fill.style.width = `${child.percent}%`;
         bar.appendChild(fill);
-        card.appendChild(bar);
+        header.appendChild(bar);
 
         const stats = document.createElement('div');
         stats.className = 'summary-child-stats';
         let statsText = `${child.completed} of ${child.total} chores`;
         if (child.streak > 0) statsText += ` · 🔥 ${child.streak} day streak`;
         stats.textContent = statsText;
-        card.appendChild(stats);
+        header.appendChild(stats);
+
+        card.appendChild(header);
+
+        // Quick actions — next 3 incomplete chores
+        if (child.nextChores.length > 0) {
+          const actions = document.createElement('div');
+          actions.className = 'summary-quick-actions';
+
+          const periodId = new Date().toISOString().slice(0, 10);
+
+          for (const chore of child.nextChores) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'summary-chore-btn';
+            btn.textContent = `${chore.icon || '✔'} ${chore.title}`;
+            btn.addEventListener('click', () => {
+              btn.disabled = true;
+              btn.classList.add('summary-chore-btn--completing');
+              choreApi
+                .complete(chore.id, periodId)
+                .then(() => refresh())
+                .catch(() => {
+                  btn.disabled = false;
+                  btn.classList.remove('summary-chore-btn--completing');
+                });
+            });
+            actions.appendChild(btn);
+          }
+
+          card.appendChild(actions);
+        }
 
         section.appendChild(card);
       }

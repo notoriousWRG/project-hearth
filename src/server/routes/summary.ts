@@ -6,7 +6,12 @@ import { getAllowanceConfig, getTiers, calculateEarned } from '../models/allowan
 import { getStreakRecord } from '../models/streaks.js';
 import { getRemindersDueOn } from '../models/reminders.js';
 import { getMealsByWeek } from '../models/meals.js';
-import type { ChildSummary, TodayMeals, SummaryResponse } from '../../shared/types.js';
+import type {
+  ChildSummary,
+  QuickActionChore,
+  TodayMeals,
+  SummaryResponse,
+} from '../../shared/types.js';
 
 function getMondayOfWeek(date: Date): string {
   const d = new Date(date);
@@ -42,6 +47,17 @@ export function createSummaryRouter(db: Database.Database): Router {
 
       const streak = getStreakRecord(db, child.id)?.current_streak ?? 0;
 
+      const nextChores: QuickActionChore[] = chores
+        .filter((c) => {
+          if (c.completed) return false;
+          if (c.recurrence_rule === 'weekly') {
+            return c.recurrence_days?.includes(todayDow as 0 | 1 | 2 | 3 | 4 | 5 | 6) ?? false;
+          }
+          return true;
+        })
+        .slice(0, 3)
+        .map((c) => ({ id: c.id, title: c.title, icon: c.icon }));
+
       return {
         id: child.id,
         name: child.name,
@@ -51,6 +67,7 @@ export function createSummaryRouter(db: Database.Database): Router {
         percent,
         earned,
         streak,
+        nextChores,
       };
     });
 
