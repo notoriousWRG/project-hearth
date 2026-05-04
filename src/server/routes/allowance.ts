@@ -6,19 +6,36 @@ import {
   getTiers,
   setTier,
   deleteAllTiers,
+  sumWeeklyEarnings,
+  updateBalances,
 } from '../models/allowance.js';
+import { requirePin } from '../middleware/pin.js';
+
+function getSundayOfWeek(date: Date): string {
+  const d = new Date(date);
+  const dow = d.getDay();
+  d.setDate(d.getDate() - dow);
+  return d.toISOString().slice(0, 10);
+}
+
+function getSaturdayOfWeek(date: Date): string {
+  const d = new Date(date);
+  const dow = d.getDay();
+  d.setDate(d.getDate() + (6 - dow));
+  return d.toISOString().slice(0, 10);
+}
 
 export function createAllowanceRouter(db: Database.Database): Router {
   const router = Router();
 
-  router.get('/:userId', (req, res) => {
+  router.get('/:userId', requirePin(db), (req, res) => {
     const userId = Number(req.params.userId);
     const config = getAllowanceConfig(db, userId) ?? null;
     const tiers = config ? getTiers(db, config.id) : [];
     res.json({ config, tiers });
   });
 
-  router.put('/:userId', (req, res) => {
+  router.put('/:userId', requirePin(db), (req, res) => {
     const userId = Number(req.params.userId);
     const { amount, streak_threshold, reset_day, period_start, tiers } = req.body as Record<
       string,
@@ -44,7 +61,55 @@ export function createAllowanceRouter(db: Database.Database): Router {
     res.json({ config, tiers: newTiers });
   });
 
-  router.post('/:userId/payout', (req, res) => {
+  router.get('/:userId/banking', (req, res) => {
+    const userId = Number(req.params.userId);
+    const config = getAllowanceConfig(db, userId);
+    if (!config) {
+      res.json({
+        thisWeekEarned: 0,
+        savingsBalance: 0,
+        titheBalance: 0,
+        checkingBalance: 0,
+      });
+      return;
+    }
+    const now = new Date();
+    const weekStart = getSundayOfWeek(now);
+    const weekEnd = getSaturdayOfWeek(now);
+    const thisWeekEarned = sumWeeklyEarnings(db, userId, weekStart, weekEnd);
+    res.json({
+      thisWeekEarned,
+      savingsBalance: config.savings_balance,
+      titheBalance: config.tithe_balance,
+      checkingBalance: config.checking_balance,
+    });
+  });
+
+  router.patch('/:userId/balances', requirePin(db), (req, res) => {
+    const userId = Number(req.params.userId);
+    const config = getAllowanceConfig(db, userId);
+    if (!config) {
+      res.status(404).json({ error: 'No allowance config for this user' });
+      return;
+    }
+    const { savings_balance, tithe_balance, checking_balance } = req.body as Record<
+      string,
+      unknown
+    >;
+    updateBalances(db, userId, {
+      savings_balance: typeof savings_balance === 'number' ? savings_balance : undefined,
+      tithe_balance: typeof tithe_balance === 'number' ? tithe_balance : undefined,
+      checking_balance: typeof checking_balance === 'number' ? checking_balance : undefined,
+    });
+    const updated = getAllowanceConfig(db, userId)!;
+    res.json({
+      savingsBalance: updated.savings_balance,
+      titheBalance: updated.tithe_balance,
+      checkingBalance: updated.checking_balance,
+    });
+  });
+
+  router.post('/:userId/payout', requirePin(db), (req, res) => {
     const userId = Number(req.params.userId);
     const config = getAllowanceConfig(db, userId);
     if (!config) {

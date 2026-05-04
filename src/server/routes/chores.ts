@@ -13,7 +13,16 @@ import {
   resetRecurringChore,
   reorderChores,
 } from '../models/chores.js';
-import { getAllowanceConfig, getTiers, calculateEarned } from '../models/allowance.js';
+import {
+  getAllowanceConfig,
+  getTiers,
+  calculateEarned,
+  getPayoutFraction,
+  roundToQuarter,
+  recordDailyEarning,
+  sumWeeklyEarnings,
+  updateBalances,
+} from '../models/allowance.js';
 import { evaluateStreakAtReset } from '../models/streaks.js';
 import { getSetting, setSetting } from '../models/settings.js';
 import { shouldReset, getCurrentResetDate } from '../utils/reset.js';
@@ -44,9 +53,8 @@ function applyRecurringReset(db: Database.Database): void {
       const allChores = getChoresByUser(db, user.id);
       const chores = filterChoresForToday(allChores, lastDow);
       const total = chores.length;
-      if (total === 0) continue;
       const completed = chores.filter((c) => c.completed).length;
-      const percent = Math.round((completed / total) * 100);
+      const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
 
       const config = getAllowanceConfig(db, user.id);
       let threshold = 100;
@@ -55,9 +63,37 @@ function applyRecurringReset(db: Database.Database): void {
         if (tiers.length > 0) {
           threshold = Math.max(...tiers.map((t) => t.percent_complete));
         }
+        if (user.type === 'child') {
+          const fraction = getPayoutFraction(tiers, percent);
+          const dailyEarned = roundToQuarter((config.amount / 7) * fraction);
+          recordDailyEarning(db, user.id, lastResetDate, dailyEarned);
+        }
       }
 
       evaluateStreakAtReset(db, user.id, percent, threshold, lastResetDate);
+    }
+
+    // Weekly rollup: fires when Saturday just closed (lastDow === 6)
+    if (lastDow === 6) {
+      const weekEnd = lastResetDate;
+      const weekStartDate = new Date(lastResetDay);
+      weekStartDate.setDate(weekStartDate.getDate() - 6);
+      const weekStart = weekStartDate.toISOString().slice(0, 10);
+
+      for (const user of users.filter((u) => u.type === 'child')) {
+        const config = getAllowanceConfig(db, user.id);
+        if (!config) continue;
+        const gross = sumWeeklyEarnings(db, user.id, weekStart, weekEnd);
+        if (gross === 0) continue;
+        const tithe = roundToQuarter(gross / 7);
+        const savings = roundToQuarter(gross / 7);
+        const checking = gross - tithe - savings;
+        updateBalances(db, user.id, {
+          savings_balance: config.savings_balance + savings,
+          tithe_balance: config.tithe_balance + tithe,
+          checking_balance: config.checking_balance + checking,
+        });
+      }
     }
   }
 

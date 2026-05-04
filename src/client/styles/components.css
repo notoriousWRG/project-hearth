@@ -1499,6 +1499,129 @@
   padding: 0.5rem 0;
 }
 
+/* ─── Banking view ───────────────────────────────────────────── */
+
+.banking-view {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1rem 1.5rem 2rem;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.banking-back-btn {
+  align-self: flex-start;
+  background: transparent;
+  border: none;
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0.25rem 0;
+  transition: color var(--transition-fast);
+}
+
+.banking-back-btn:hover {
+  color: var(--color-text-primary);
+}
+
+.banking-heading {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  font-weight: normal;
+  color: var(--color-heading);
+  margin: 0;
+}
+
+.banking-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.banking-bucket {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.banking-bucket__label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
+}
+
+.banking-bucket__value {
+  font-size: 1.75rem;
+  font-family: var(--font-heading);
+  font-weight: normal;
+  color: var(--color-heading);
+}
+
+/* ─── Child dashboard earned badge as button ─────────────────── */
+
+.child-dashboard__earned {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.25rem 0.625rem;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
+}
+
+.child-dashboard__earned:hover {
+  background: var(--color-hover);
+  color: var(--color-text-primary);
+}
+
+/* ─── Balances settings section ──────────────────────────────── */
+
+.balances-child {
+  margin-bottom: 1.5rem;
+}
+
+.balances-child h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: var(--color-text-primary);
+}
+
+.balances-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.balances-field label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+}
+
+.balances-field input {
+  width: 120px;
+  padding: 0.375rem 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  font-size: 0.9375rem;
+}
+
 /* ─── Error banner ───────────────────────────────────────────── */
 
 .error-banner {

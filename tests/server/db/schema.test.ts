@@ -9,6 +9,7 @@ const EXPECTED_TABLES = [
   'chores',
   'chore_completions',
   'allowance_config',
+  'allowance_daily_earnings',
   'allowance_tiers',
   'streak_records',
   'meal_plan',
@@ -29,7 +30,7 @@ afterEach(() => {
 });
 
 describe('runSchema', () => {
-  it('creates all 11 tables', () => {
+  it('creates all 12 tables', () => {
     const rows = db
       .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
       .all() as Array<{ name: string }>;
