@@ -1,13 +1,15 @@
 import type { User } from '../../shared/types.js';
 import { createChoreManagementSection } from '../components/ChoreManagementSection.js';
 import { createAllowanceConfigSection } from '../components/AllowanceConfigSection.js';
+import { createUserManagementSection } from '../components/UserManagementSection.js';
 import { applyTheme, THEMES, type Theme } from '../utils/theme.js';
 import { createPinSettingsApi, createPinAllowanceApi } from '../utils/api.js';
 import * as api from '../utils/api.js';
 
-type SettingsTab = 'chores' | 'allowance' | 'theme' | 'pin' | 'payout' | 'reset-time';
+type SettingsTab = 'users' | 'chores' | 'allowance' | 'theme' | 'pin' | 'payout' | 'reset-time';
 
 const TAB_LABELS: Record<SettingsTab, string> = {
+  users: 'Users',
   chores: 'Chores',
   allowance: 'Allowance',
   theme: 'Theme',
@@ -45,7 +47,7 @@ export function createSettingsPanel(
   content.className = 'settings-panel__content';
   view.appendChild(content);
 
-  let activeTab: SettingsTab = 'chores';
+  let activeTab: SettingsTab = 'users';
 
   function renderNav(): void {
     navSlot.innerHTML = '';
@@ -69,7 +71,9 @@ export function createSettingsPanel(
 
   function renderContent(): void {
     content.innerHTML = '';
-    if (activeTab === 'chores') {
+    if (activeTab === 'users') {
+      content.appendChild(createUserManagementSection(api.users));
+    } else if (activeTab === 'chores') {
       content.appendChild(createChoreManagementSection(childUsers, api.chores));
     } else if (activeTab === 'allowance') {
       content.appendChild(createAllowanceConfigSection(childUsers, pinAllowanceApi));

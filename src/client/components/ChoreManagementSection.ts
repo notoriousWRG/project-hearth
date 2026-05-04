@@ -127,6 +127,50 @@ export function createChoreManagementSection(childUsers: User[], api: ChoreManag
     li.appendChild(upBtn);
     li.appendChild(downBtn);
     li.appendChild(delBtn);
+
+    for (const target of childUsers.filter((c) => c.id !== activeChildId)) {
+      const copyBtn = document.createElement('button');
+      copyBtn.type = 'button';
+      copyBtn.dataset.action = 'copy-to';
+      copyBtn.dataset.targetId = String(target.id);
+      copyBtn.textContent = `→ ${target.icon || '⭐'} ${target.name}`;
+      copyBtn.addEventListener('click', () => {
+        copyBtn.disabled = true;
+        void api.list(target.id).then((targetChores) => {
+          const currentTitle = titleInput.value.trim().toLowerCase();
+          const duplicate = targetChores.some((c) => c.title.trim().toLowerCase() === currentTitle);
+          if (duplicate) {
+            copyBtn.textContent = 'Already there';
+            setTimeout(() => {
+              copyBtn.textContent = `→ ${target.icon || '⭐'} ${target.name}`;
+              copyBtn.disabled = false;
+            }, 2000);
+            return;
+          }
+          void api
+            .create({
+              user_id: target.id,
+              title: titleInput.value.trim(),
+              icon: iconInput.value,
+              completed: false,
+              is_recurring: chore.is_recurring,
+              recurrence_rule: chore.recurrence_rule,
+              is_bonus: false,
+              bonus_amount: null,
+              position: targetChores.length,
+            })
+            .then(() => {
+              copyBtn.textContent = '✓ Copied';
+              setTimeout(() => {
+                copyBtn.textContent = `→ ${target.icon || '⭐'} ${target.name}`;
+                copyBtn.disabled = false;
+              }, 2000);
+            });
+        });
+      });
+      li.appendChild(copyBtn);
+    }
+
     return li;
   }
 

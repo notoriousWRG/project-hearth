@@ -153,4 +153,64 @@ describe('createChoreManagementSection', () => {
       expect(api.reorder).toHaveBeenCalledWith(1, [2, 1]);
     });
   });
+
+  it('renders a copy button for each other child per chore row', async () => {
+    const api = makeChoreApi([makeChore({ id: 1, title: 'Feed the chickens' })]);
+    const el = createChoreManagementSection(children, api);
+    container.appendChild(el);
+    await vi.waitFor(() => expect(el.querySelector('[data-action="copy-to"]')).toBeTruthy());
+
+    const copyBtns = el.querySelectorAll('[data-action="copy-to"]');
+    expect(copyBtns.length).toBe(1);
+    expect((copyBtns[0] as HTMLButtonElement).dataset.targetId).toBe('2');
+    expect(copyBtns[0].textContent).toContain('Golden');
+  });
+
+  it('copy button calls api.create with chore data for the target child', async () => {
+    const activeChore = makeChore({ id: 1, title: 'Feed the chickens', icon: '🐔' });
+    const api = makeChoreApi([activeChore]);
+    // Target child (id=2) has no chores
+    api.list.mockImplementation(async (userId: number) => (userId === 1 ? [activeChore] : []));
+    const el = createChoreManagementSection(children, api);
+    container.appendChild(el);
+    await vi.waitFor(() => expect(el.querySelector('[data-action="copy-to"]')).toBeTruthy());
+
+    (el.querySelector('[data-action="copy-to"]') as HTMLButtonElement).click();
+
+    await vi.waitFor(() => {
+      expect(api.create).toHaveBeenCalledWith(
+        expect.objectContaining({ title: 'Feed the chickens', icon: '🐔', user_id: 2 }),
+      );
+    });
+  });
+
+  it('copy button does not call api.create when title already exists for target', async () => {
+    const activeChore = makeChore({ id: 1, title: 'Feed the chickens' });
+    const targetChore = makeChore({ id: 10, user_id: 2, title: 'Feed the chickens' });
+    const api = makeChoreApi([activeChore]);
+    api.list.mockImplementation(async (userId: number) =>
+      userId === 1 ? [activeChore] : [targetChore],
+    );
+    const el = createChoreManagementSection(children, api);
+    container.appendChild(el);
+    await vi.waitFor(() => expect(el.querySelector('[data-action="copy-to"]')).toBeTruthy());
+
+    (el.querySelector('[data-action="copy-to"]') as HTMLButtonElement).click();
+
+    await vi.waitFor(() => {
+      expect((el.querySelector('[data-action="copy-to"]') as HTMLButtonElement).textContent).toBe(
+        'Already there',
+      );
+    });
+    expect(api.create).not.toHaveBeenCalled();
+  });
+
+  it('no copy buttons when only one child exists', async () => {
+    const api = makeChoreApi([makeChore({ id: 1 })]);
+    const el = createChoreManagementSection([children[0]], api);
+    container.appendChild(el);
+    await vi.waitFor(() => expect(el.querySelector('[data-action="delete"]')).toBeTruthy());
+
+    expect(el.querySelector('[data-action="copy-to"]')).toBeNull();
+  });
 });
