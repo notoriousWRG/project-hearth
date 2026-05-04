@@ -20,11 +20,6 @@ describe('createProgressPanel', () => {
     expect(el.textContent).toContain('5');
   });
 
-  it('shows earned amount formatted as currency', () => {
-    const el = createProgressPanel(makeData({ earned: 6.0 }));
-    expect(el.textContent).toContain('$6.00');
-  });
-
   it('sets progress bar fill width to percent', () => {
     const el = createProgressPanel(makeData({ percent: 60 }));
     const fill = el.querySelector('.progress-bar__fill') as HTMLElement;
@@ -43,13 +38,8 @@ describe('createProgressPanel', () => {
 
     el.update({ total: 5, completed: 5, percent: 100, earned: 10.0 });
 
-    expect(el.textContent).toContain('$10.00');
+    expect(el.textContent).toContain('5 of 5');
     const fill = el.querySelector('.progress-bar__fill') as HTMLElement;
     expect(fill.style.width).toBe('100%');
-  });
-
-  it('shows $0.00 when no allowance config (earned = 0)', () => {
-    const el = createProgressPanel(makeData({ earned: 0, percent: 50 }));
-    expect(el.textContent).toContain('$0.00');
   });
 });

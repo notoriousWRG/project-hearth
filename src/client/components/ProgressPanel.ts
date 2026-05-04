@@ -21,23 +21,17 @@ export function createProgressPanel(initial: ProgressData): ProgressPanelElement
   fill.className = 'progress-bar__fill';
   track.appendChild(fill);
 
-  const earnedEl = document.createElement('p');
-  earnedEl.className = 'progress-panel__earned';
-
   section.appendChild(countEl);
   section.appendChild(track);
-  section.appendChild(earnedEl);
 
   function render(data: ProgressData): void {
     if (data.total === 0) {
       countEl.textContent = 'No chores today';
       fill.style.width = '0%';
-      earnedEl.textContent = `$${data.earned.toFixed(2)}`;
       return;
     }
     countEl.textContent = `${data.completed} of ${data.total}`;
     fill.style.width = `${data.percent}%`;
-    earnedEl.textContent = `$${data.earned.toFixed(2)}`;
   }
 
   render(initial);

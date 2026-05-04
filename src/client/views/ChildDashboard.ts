@@ -13,7 +13,11 @@ export function createChildDashboard(user: User): HTMLElement {
   const greeting = document.createElement('h1');
   greeting.className = 'child-dashboard__greeting';
   greeting.textContent = `Hi ${user.name}! ${user.icon}`;
+  const earnedBadge = document.createElement('div');
+  earnedBadge.className = 'child-dashboard__earned';
+  earnedBadge.textContent = '$0.00';
   header.appendChild(greeting);
+  header.appendChild(earnedBadge);
   view.appendChild(header);
 
   // Placeholders rendered immediately, populated once data arrives
@@ -34,6 +38,7 @@ export function createChildDashboard(user: User): HTMLElement {
     ]);
     progressPanel.update(progress);
     streakEl.update(streak, progress.streak_threshold);
+    earnedBadge.textContent = `$${progress.earned.toFixed(2)}`;
   }
 
   const choreList = createChildChoreList(user.id, api.chores, () => {

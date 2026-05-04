@@ -750,7 +750,17 @@
 }
 
 .child-dashboard__header {
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.child-dashboard__earned {
+  font-family: var(--font-heading);
+  font-size: 1.125rem;
+  font-weight: bold;
+  color: var(--color-accent);
+  flex-shrink: 0;
 }
 
 .child-dashboard__greeting {
@@ -791,14 +801,6 @@
   background: var(--color-accent);
   border-radius: var(--radius-lg);
   transition: width 0.4s ease;
-}
-
-.progress-panel__earned {
-  font-family: var(--font-heading);
-  font-size: 2.5rem;
-  font-weight: bold;
-  color: var(--color-accent);
-  line-height: 1;
 }
 
 /* ─── Streak display ─────────────────────────────────────────── */
@@ -849,9 +851,11 @@
   box-shadow: var(--shadow-sm);
   text-align: left;
   transition:
+    min-height 0.3s ease,
+    padding 0.3s ease,
     border-color 0.15s,
     background 0.15s,
-    opacity 0.15s;
+    opacity 0.3s ease;
 }
 
 .child-chore-item:hover:not(.child-chore-item--done) {
@@ -895,13 +899,23 @@
   animation: pulse-complete 0.4s ease forwards;
 }
 
-/* Done state */
+/* Done state — collapses to a slim row */
 .child-chore-item--done {
+  min-height: 2rem;
+  padding: 0.25rem var(--space-md);
+  gap: var(--space-sm);
   opacity: 0.55;
   cursor: default;
+  box-shadow: none;
+}
+
+.child-chore-item--done .child-chore-item__icon {
+  font-size: 1rem;
 }
 
 .child-chore-item--done .child-chore-item__title {
+  font-size: 0.875rem;
+  font-weight: 400;
   text-decoration: line-through;
   color: var(--color-muted);
 }
