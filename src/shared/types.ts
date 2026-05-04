@@ -62,6 +62,7 @@ export interface AllowanceConfig {
 
 export interface BankingData {
   thisWeekEarned: number;
+  todayEarned: number;
   savingsBalance: number;
   titheBalance: number;
   checkingBalance: number;

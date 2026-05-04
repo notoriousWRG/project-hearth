@@ -43,6 +43,7 @@ describe('GET /api/allowance/:userId/banking', () => {
     const res = await request(app).get(`/api/allowance/${userId}/banking`);
     expect(res.status).toBe(200);
     expect(res.body.thisWeekEarned).toBe(0);
+    expect(res.body.todayEarned).toBe(0);
     expect(res.body.savingsBalance).toBe(0);
     expect(res.body.titheBalance).toBe(0);
     expect(res.body.checkingBalance).toBe(0);
@@ -54,6 +55,7 @@ describe('GET /api/allowance/:userId/banking', () => {
     const res = await request(app).get(`/api/allowance/${noConfigId}/banking`);
     expect(res.status).toBe(200);
     expect(res.body.thisWeekEarned).toBe(0);
+    expect(res.body.todayEarned).toBe(0);
   });
 
   it('sums current-week daily earnings', async () => {

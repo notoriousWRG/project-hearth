@@ -58,7 +58,7 @@ export function createBankingView(user: User, onBack: () => void): HTMLElement {
   }
 
   void allowanceApi.banking(user.id).then((data) => {
-    weekEl.textContent = fmt(data.thisWeekEarned);
+    weekEl.textContent = fmt(data.thisWeekEarned + data.todayEarned);
     savingsEl.textContent = fmt(data.savingsBalance);
     titheEl.textContent = fmt(data.titheBalance);
     checkingEl.textContent = fmt(data.checkingBalance);

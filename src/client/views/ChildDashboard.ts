@@ -57,7 +57,8 @@ export function createChildDashboard(user: User): HTMLElement {
       ]);
       progressPanel.update(progress);
       streakEl.update(streak, progress.streak_threshold);
-      earnedBadge.textContent = `$${banking.thisWeekEarned.toFixed(2)} this week`;
+      const total = banking.thisWeekEarned + banking.todayEarned;
+      earnedBadge.textContent = `$${total.toFixed(2)} this week`;
     }
 
     const choreList = createChildChoreList(user.id, api.chores, () => {

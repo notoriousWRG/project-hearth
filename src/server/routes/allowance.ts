@@ -6,9 +6,12 @@ import {
   getTiers,
   setTier,
   deleteAllTiers,
+  getPayoutFraction,
+  roundToQuarter,
   sumWeeklyEarnings,
   updateBalances,
 } from '../models/allowance.js';
+import { getChoresByUser } from '../models/chores.js';
 import { requirePin } from '../middleware/pin.js';
 
 function getSundayOfWeek(date: Date): string {
@@ -67,6 +70,7 @@ export function createAllowanceRouter(db: Database.Database): Router {
     if (!config) {
       res.json({
         thisWeekEarned: 0,
+        todayEarned: 0,
         savingsBalance: 0,
         titheBalance: 0,
         checkingBalance: 0,
@@ -74,11 +78,28 @@ export function createAllowanceRouter(db: Database.Database): Router {
       return;
     }
     const now = new Date();
+    const todayDow = now.getDay();
     const weekStart = getSundayOfWeek(now);
     const weekEnd = getSaturdayOfWeek(now);
     const thisWeekEarned = sumWeeklyEarnings(db, userId, weekStart, weekEnd);
+
+    // Today's live earning from current chore completion state
+    const allChores = getChoresByUser(db, userId);
+    const todayChores = allChores.filter((c) => {
+      if (c.recurrence_rule === 'weekly') {
+        return c.recurrence_days?.includes(todayDow as 0 | 1 | 2 | 3 | 4 | 5 | 6) ?? false;
+      }
+      return true;
+    });
+    const total = todayChores.length;
+    const completed = todayChores.filter((c) => c.completed).length;
+    const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+    const tiers = getTiers(db, config.id);
+    const todayEarned = roundToQuarter((config.amount / 7) * getPayoutFraction(tiers, percent));
+
     res.json({
       thisWeekEarned,
+      todayEarned,
       savingsBalance: config.savings_balance,
       titheBalance: config.tithe_balance,
       checkingBalance: config.checking_balance,
