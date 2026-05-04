@@ -1,7 +1,7 @@
-import type { Chore, StreakRecord, User } from '../../shared/types.js';
+import type { Chore, DayOfWeek, StreakRecord, User } from '../../shared/types.js';
 
 interface ChoreManageApi {
-  list: (userId: number) => Promise<Chore[]>;
+  listAll: (userId: number) => Promise<Chore[]>;
   create: (data: Partial<Chore>) => Promise<Chore>;
   update: (id: number, data: Partial<Chore>) => Promise<Chore>;
   remove: (id: number) => Promise<void>;
@@ -9,9 +9,52 @@ interface ChoreManageApi {
   uncomplete: (id: number) => Promise<Chore>;
 }
 
+function isActiveToday(chore: Chore): boolean {
+  if (chore.recurrence_rule !== 'weekly') return true;
+  const dow = new Date().getDay() as DayOfWeek;
+  return chore.recurrence_days?.includes(dow) ?? false;
+}
+
 interface StreakApi {
   get: (userId: number) => Promise<StreakRecord>;
   reset: (userId: number) => Promise<StreakRecord>;
+}
+
+const DAY_LABELS: string[] = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+function buildDayPicker(
+  selectedDays: DayOfWeek[],
+  onChange: (days: DayOfWeek[]) => void,
+): HTMLElement {
+  const wrap = document.createElement('div');
+  wrap.className = 'chore-day-picker';
+
+  DAY_LABELS.forEach((label, i) => {
+    const day = i as DayOfWeek;
+    const lbl = document.createElement('label');
+    lbl.className = 'chore-day-picker__day';
+
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = selectedDays.includes(day);
+    cb.setAttribute('aria-label', label);
+    cb.addEventListener('change', () => {
+      const current = DAY_LABELS.map((_, j) => {
+        const sibling = wrap.querySelectorAll<HTMLInputElement>('input[type=checkbox]')[j];
+        return sibling?.checked ? (j as DayOfWeek) : null;
+      }).filter((d): d is DayOfWeek => d !== null);
+      onChange(current);
+    });
+
+    const span = document.createElement('span');
+    span.textContent = label;
+
+    lbl.appendChild(cb);
+    lbl.appendChild(span);
+    wrap.appendChild(lbl);
+  });
+
+  return wrap;
 }
 
 export function createChoreManagementSection(
@@ -63,9 +106,9 @@ export function createChoreManagementSection(
     }
   }
 
-  function renderChoreRow(chore: Chore, index: number): HTMLLIElement {
+  function renderChoreRow(chore: Chore, index: number, active: boolean): HTMLLIElement {
     const li = document.createElement('li');
-    li.className = 'chore-row';
+    li.className = 'chore-row' + (active ? '' : ' chore-row--inactive');
     li.dataset.choreId = String(chore.id);
 
     const iconInput = document.createElement('input');
@@ -86,6 +129,20 @@ export function createChoreManagementSection(
     titleInput.addEventListener('blur', () => {
       void api.update(chore.id, { title: titleInput.value });
     });
+
+    // Frequency selector
+    const freqSelect = document.createElement('select');
+    freqSelect.className = 'chore-row__freq';
+    freqSelect.setAttribute('aria-label', 'Frequency');
+    const dailyOpt = document.createElement('option');
+    dailyOpt.value = 'daily';
+    dailyOpt.textContent = 'Daily';
+    const weeklyOpt = document.createElement('option');
+    weeklyOpt.value = 'weekly';
+    weeklyOpt.textContent = 'Weekly';
+    freqSelect.appendChild(dailyOpt);
+    freqSelect.appendChild(weeklyOpt);
+    freqSelect.value = chore.recurrence_rule === 'weekly' ? 'weekly' : 'daily';
 
     const upBtn = document.createElement('button');
     upBtn.type = 'button';
@@ -113,17 +170,6 @@ export function createChoreManagementSection(
       void api.reorder(activeChildId, ids).then(() => loadChores());
     });
 
-    if (chore.completed) {
-      const undoBtn = document.createElement('button');
-      undoBtn.type = 'button';
-      undoBtn.dataset.action = 'uncomplete';
-      undoBtn.textContent = '✓ Undo';
-      undoBtn.addEventListener('click', () => {
-        void api.uncomplete(chore.id).then(() => loadChores());
-      });
-      li.appendChild(undoBtn);
-    }
-
     const delBtn = document.createElement('button');
     delBtn.type = 'button';
     delBtn.dataset.action = 'delete';
@@ -132,11 +178,27 @@ export function createChoreManagementSection(
       void api.remove(chore.id).then(() => loadChores());
     });
 
-    li.appendChild(iconInput);
-    li.appendChild(titleInput);
-    li.appendChild(upBtn);
-    li.appendChild(downBtn);
-    li.appendChild(delBtn);
+    // Controls row
+    const controls = document.createElement('div');
+    controls.className = 'chore-row__controls';
+    controls.appendChild(iconInput);
+    controls.appendChild(titleInput);
+    controls.appendChild(freqSelect);
+
+    if (active && chore.completed) {
+      const undoBtn = document.createElement('button');
+      undoBtn.type = 'button';
+      undoBtn.dataset.action = 'uncomplete';
+      undoBtn.textContent = '✓ Undo';
+      undoBtn.addEventListener('click', () => {
+        void api.uncomplete(chore.id).then(() => loadChores());
+      });
+      controls.appendChild(undoBtn);
+    }
+
+    controls.appendChild(upBtn);
+    controls.appendChild(downBtn);
+    controls.appendChild(delBtn);
 
     for (const target of childUsers.filter((c) => c.id !== activeChildId)) {
       const copyBtn = document.createElement('button');
@@ -146,7 +208,7 @@ export function createChoreManagementSection(
       copyBtn.textContent = `→ ${target.icon || '⭐'} ${target.name}`;
       copyBtn.addEventListener('click', () => {
         copyBtn.disabled = true;
-        void api.list(target.id).then((targetChores) => {
+        void api.listAll(target.id).then((targetChores) => {
           const currentTitle = titleInput.value.trim().toLowerCase();
           const duplicate = targetChores.some((c) => c.title.trim().toLowerCase() === currentTitle);
           if (duplicate) {
@@ -165,6 +227,7 @@ export function createChoreManagementSection(
               completed: false,
               is_recurring: chore.is_recurring,
               recurrence_rule: chore.recurrence_rule,
+              recurrence_days: chore.recurrence_days,
               is_bonus: false,
               bonus_amount: null,
               position: targetChores.length,
@@ -178,8 +241,39 @@ export function createChoreManagementSection(
             });
         });
       });
-      li.appendChild(copyBtn);
+      controls.appendChild(copyBtn);
     }
+
+    li.appendChild(controls);
+
+    // Day picker — below controls, only when weekly
+    let dayPickerEl: HTMLElement | null = null;
+
+    function syncDayPicker(): void {
+      if (dayPickerEl) dayPickerEl.remove();
+      dayPickerEl = null;
+      if (freqSelect.value === 'weekly') {
+        dayPickerEl = buildDayPicker(chore.recurrence_days ?? [], (days) => {
+          void api.update(chore.id, { recurrence_days: days });
+        });
+        li.appendChild(dayPickerEl);
+      }
+    }
+
+    freqSelect.addEventListener('change', () => {
+      const isWeekly = freqSelect.value === 'weekly';
+      void api
+        .update(chore.id, {
+          recurrence_rule: isWeekly ? 'weekly' : 'daily',
+          recurrence_days: isWeekly ? (chore.recurrence_days ?? []) : null,
+        })
+        .then(() => {
+          chore = { ...chore, recurrence_rule: isWeekly ? 'weekly' : 'daily' };
+          syncDayPicker();
+        });
+    });
+
+    syncDayPicker();
 
     return li;
   }
@@ -228,17 +322,58 @@ export function createChoreManagementSection(
     titleInput.required = true;
     titleInput.className = 'chore-row__title';
 
+    // Frequency selector for new chore
+    const freqSelect = document.createElement('select');
+    freqSelect.dataset.field = 'frequency';
+    freqSelect.className = 'chore-row__freq';
+    freqSelect.setAttribute('aria-label', 'Frequency');
+    const dailyOpt = document.createElement('option');
+    dailyOpt.value = 'daily';
+    dailyOpt.textContent = 'Daily';
+    const weeklyOpt = document.createElement('option');
+    weeklyOpt.value = 'weekly';
+    weeklyOpt.textContent = 'Weekly';
+    freqSelect.appendChild(dailyOpt);
+    freqSelect.appendChild(weeklyOpt);
+
     const addBtn = document.createElement('button');
     addBtn.type = 'submit';
     addBtn.textContent = 'Add';
 
-    form.appendChild(iconInput);
-    form.appendChild(titleInput);
-    form.appendChild(addBtn);
+    // Controls row for the add form
+    const formControls = document.createElement('div');
+    formControls.className = 'chore-row__controls';
+    formControls.appendChild(iconInput);
+    formControls.appendChild(titleInput);
+    formControls.appendChild(freqSelect);
+    formControls.appendChild(addBtn);
+    form.appendChild(formControls);
+
+    // Day picker for new chore — below the controls row
+    let newChoreDays: DayOfWeek[] = [];
+    let newDayPickerEl: HTMLElement | null = null;
+
+    function syncNewDayPicker(): void {
+      if (newDayPickerEl) newDayPickerEl.remove();
+      newDayPickerEl = null;
+      if (freqSelect.value === 'weekly') {
+        newDayPickerEl = buildDayPicker(newChoreDays, (days) => {
+          newChoreDays = days;
+        });
+        form.appendChild(newDayPickerEl);
+      }
+    }
+
+    freqSelect.addEventListener('change', () => {
+      newChoreDays = [];
+      syncNewDayPicker();
+    });
+
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       const title = titleInput.value.trim();
       if (!title) return;
+      const isWeekly = freqSelect.value === 'weekly';
       void api
         .create({
           user_id: activeChildId,
@@ -246,7 +381,8 @@ export function createChoreManagementSection(
           icon: iconInput.value.trim(),
           completed: false,
           is_recurring: true,
-          recurrence_rule: 'daily',
+          recurrence_rule: isWeekly ? 'weekly' : 'daily',
+          recurrence_days: isWeekly ? newChoreDays : null,
           is_bonus: false,
           bonus_amount: null,
           position: chores.length,
@@ -254,25 +390,44 @@ export function createChoreManagementSection(
         .then(() => {
           titleInput.value = '';
           iconInput.value = '';
+          freqSelect.value = 'daily';
+          newChoreDays = [];
+          syncNewDayPicker();
           loadChores();
         });
     });
     content.appendChild(form);
 
-    // Chore list
+    // Chore list — split active (today) and inactive (off-day weekly)
     if (chores.length === 0) {
       const empty = document.createElement('p');
       empty.textContent = 'No chores yet.';
       content.appendChild(empty);
     } else {
+      const active = chores.filter(isActiveToday);
+      const inactive = chores.filter((c) => !isActiveToday(c));
+
       const ul = document.createElement('ul');
-      chores.forEach((chore, index) => ul.appendChild(renderChoreRow(chore, index)));
+      active.forEach((chore, index) => ul.appendChild(renderChoreRow(chore, index, true)));
       content.appendChild(ul);
+
+      if (inactive.length > 0) {
+        const heading = document.createElement('p');
+        heading.className = 'chore-section-label';
+        heading.textContent = 'Not scheduled today';
+        content.appendChild(heading);
+
+        const inactiveUl = document.createElement('ul');
+        inactive.forEach((chore, index) =>
+          inactiveUl.appendChild(renderChoreRow(chore, index, false)),
+        );
+        content.appendChild(inactiveUl);
+      }
     }
   }
 
   function loadChores(): void {
-    const choresFetch = api.list(activeChildId);
+    const choresFetch = api.listAll(activeChildId);
     const streakFetch = streakApi ? streakApi.get(activeChildId) : Promise.resolve(null);
     void Promise.all([choresFetch, streakFetch]).then(([fetchedChores, fetchedStreak]) => {
       chores = fetchedChores;

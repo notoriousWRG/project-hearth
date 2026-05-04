@@ -33,6 +33,7 @@ export interface Chore {
   completed: boolean;
   is_recurring: boolean;
   recurrence_rule: RecurrenceRule | null;
+  recurrence_days: DayOfWeek[] | null;
   is_bonus: boolean;
   bonus_amount: number | null;
   position: number;

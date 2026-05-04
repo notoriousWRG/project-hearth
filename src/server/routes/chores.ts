@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import type Database from 'better-sqlite3';
+import type { Chore } from '../../shared/types.js';
 import {
   getChoresByUser,
   getChoreById,
@@ -18,6 +19,13 @@ import { getSetting, setSetting } from '../models/settings.js';
 import { shouldReset, getCurrentResetDate } from '../utils/reset.js';
 import { getAllUsers } from '../models/users.js';
 
+function filterChoresForToday(chores: Chore[], dayOfWeek: number): Chore[] {
+  return chores.filter((c) => {
+    if (c.recurrence_rule !== 'weekly') return true;
+    return c.recurrence_days?.includes(dayOfWeek as 0 | 1 | 2 | 3 | 4 | 5 | 6) ?? false;
+  });
+}
+
 function applyRecurringReset(db: Database.Database): void {
   const resetTime = getSetting<string>(db, 'reset_time') ?? '00:00';
   const lastResetDate = getSetting<string>(db, 'last_chore_reset_date') ?? '1970-01-01';
@@ -27,10 +35,14 @@ function applyRecurringReset(db: Database.Database): void {
   const currentPeriod = getCurrentResetDate(now, resetTime);
   const users = getAllUsers(db);
 
-  // Evaluate streaks for the closing period before clearing completed flags
+  // Evaluate streaks for the closing period before clearing completed flags.
+  // Use the previous day's day-of-week to filter which chores were visible yesterday.
   if (lastResetDate !== '1970-01-01') {
+    const lastResetDay = new Date(lastResetDate + 'T12:00:00');
+    const lastDow = lastResetDay.getDay();
     for (const user of users) {
-      const chores = getChoresByUser(db, user.id);
+      const allChores = getChoresByUser(db, user.id);
+      const chores = filterChoresForToday(allChores, lastDow);
       const total = chores.length;
       if (total === 0) continue;
       const completed = chores.filter((c) => c.completed).length;
@@ -62,7 +74,9 @@ export function createChoresRouter(db: Database.Database): Router {
 
   router.get('/progress/:userId', (req, res) => {
     const userId = Number(req.params.userId);
-    const chores = getChoresByUser(db, userId);
+    const allChores = getChoresByUser(db, userId);
+    const todayDow = new Date().getDay();
+    const chores = filterChoresForToday(allChores, todayDow);
     const total = chores.length;
     const completed = chores.filter((c) => c.completed).length;
     const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
@@ -85,7 +99,13 @@ export function createChoresRouter(db: Database.Database): Router {
       return;
     }
     applyRecurringReset(db);
-    res.json(getChoresByUser(db, userId));
+    const all = getChoresByUser(db, userId);
+    if (req.query.all === 'true') {
+      res.json(all);
+      return;
+    }
+    const todayDow = new Date().getDay();
+    res.json(filterChoresForToday(all, todayDow));
   });
 
   router.post('/', (req, res) => {
@@ -95,6 +115,7 @@ export function createChoresRouter(db: Database.Database): Router {
       icon,
       is_recurring,
       recurrence_rule,
+      recurrence_days,
       is_bonus,
       bonus_amount,
       position,
@@ -110,6 +131,9 @@ export function createChoresRouter(db: Database.Database): Router {
       completed: false,
       is_recurring: Boolean(is_recurring),
       recurrence_rule: (recurrence_rule as 'daily' | 'weekly' | null) ?? null,
+      recurrence_days: Array.isArray(recurrence_days)
+        ? (recurrence_days as (0 | 1 | 2 | 3 | 4 | 5 | 6)[])
+        : null,
       is_bonus: Boolean(is_bonus),
       bonus_amount: typeof bonus_amount === 'number' ? bonus_amount : null,
       position: typeof position === 'number' ? position : 0,
@@ -163,6 +187,7 @@ export function createChoresRouter(db: Database.Database): Router {
       return;
     }
     reorderChores(db, userId, ids);
+    // Return all chores unfiltered for the settings UI reorder response
     res.json(getChoresByUser(db, userId));
   });
 

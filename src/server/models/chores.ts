@@ -1,5 +1,5 @@
 import type Database from 'better-sqlite3';
-import type { Chore, NewChore, ChoreCompletion } from '../../shared/types.js';
+import type { Chore, DayOfWeek, NewChore, ChoreCompletion } from '../../shared/types.js';
 
 type RawChore = {
   id: number;
@@ -9,6 +9,7 @@ type RawChore = {
   completed: number;
   is_recurring: number;
   recurrence_rule: string | null;
+  recurrence_days: string | null;
   is_bonus: number;
   bonus_amount: number | null;
   position: number;
@@ -23,6 +24,17 @@ type RawCompletion = {
   period_id: string;
 };
 
+function parseRecurrenceDays(raw: string | null): DayOfWeek[] | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (Array.isArray(parsed)) return parsed as DayOfWeek[];
+  } catch {
+    // malformed stored value — treat as unset
+  }
+  return null;
+}
+
 function mapChore(row: RawChore): Chore {
   return {
     id: row.id,
@@ -32,6 +44,7 @@ function mapChore(row: RawChore): Chore {
     completed: row.completed === 1,
     is_recurring: row.is_recurring === 1,
     recurrence_rule: row.recurrence_rule as Chore['recurrence_rule'],
+    recurrence_days: parseRecurrenceDays(row.recurrence_days),
     is_bonus: row.is_bonus === 1,
     bonus_amount: row.bonus_amount,
     position: row.position,
@@ -62,10 +75,11 @@ export function getChoreById(db: Database.Database, id: number): Chore | undefin
 }
 
 export function createChore(db: Database.Database, data: NewChore): Chore {
+  const recurrenceDaysJson = data.recurrence_days ? JSON.stringify(data.recurrence_days) : null;
   const row = db
     .prepare(
-      `INSERT INTO chores (user_id, title, icon, completed, is_recurring, recurrence_rule, is_bonus, bonus_amount, position)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
+      `INSERT INTO chores (user_id, title, icon, completed, is_recurring, recurrence_rule, recurrence_days, is_bonus, bonus_amount, position)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
     )
     .get(
       data.user_id,
@@ -74,6 +88,7 @@ export function createChore(db: Database.Database, data: NewChore): Chore {
       data.completed ? 1 : 0,
       data.is_recurring ? 1 : 0,
       data.recurrence_rule,
+      recurrenceDaysJson,
       data.is_bonus ? 1 : 0,
       data.bonus_amount,
       data.position,
@@ -89,15 +104,17 @@ export function updateChore(
   const current = getChoreById(db, id);
   if (!current) return undefined;
   const merged = { ...current, ...data };
+  const recurrenceDaysJson = merged.recurrence_days ? JSON.stringify(merged.recurrence_days) : null;
   db.prepare(
     `UPDATE chores SET title = ?, icon = ?, completed = ?, is_recurring = ?, recurrence_rule = ?,
-     is_bonus = ?, bonus_amount = ?, position = ? WHERE id = ?`,
+     recurrence_days = ?, is_bonus = ?, bonus_amount = ?, position = ? WHERE id = ?`,
   ).run(
     merged.title,
     merged.icon,
     merged.completed ? 1 : 0,
     merged.is_recurring ? 1 : 0,
     merged.recurrence_rule,
+    recurrenceDaysJson,
     merged.is_bonus ? 1 : 0,
     merged.bonus_amount,
     merged.position,

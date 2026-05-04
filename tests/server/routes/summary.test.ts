@@ -3,7 +3,7 @@ import request from 'supertest';
 import Database from 'better-sqlite3';
 import type { Express } from 'express';
 import { createDb } from '../../../src/server/db/connection.js';
-import { runSchema } from '../../../src/server/db/schema.js';
+import { runSchema, runMigrations } from '../../../src/server/db/schema.js';
 import { createApp } from '../../../src/server/app.js';
 
 let db: Database.Database;
@@ -12,6 +12,7 @@ let app: Express;
 beforeEach(() => {
   db = createDb(':memory:');
   runSchema(db);
+  runMigrations(db);
   app = createApp(db);
 });
 

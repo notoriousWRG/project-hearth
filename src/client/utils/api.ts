@@ -63,6 +63,7 @@ export const todos = {
 
 export const chores = {
   list: (userId: number) => get<Chore[]>(`/chores?userId=${userId}`),
+  listAll: (userId: number) => get<Chore[]>(`/chores?userId=${userId}&all=true`),
   create: (data: NewChore) => post<Chore>('/chores', data),
   update: (id: number, data: Partial<NewChore>) => put<Chore>(`/chores/${id}`, data),
   complete: (id: number, periodId: string) =>

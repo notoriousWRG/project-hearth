@@ -101,3 +101,11 @@ CREATE TABLE IF NOT EXISTS settings (
 export function runSchema(db: Database.Database): void {
   db.exec(SCHEMA_SQL);
 }
+
+export function runMigrations(db: Database.Database): void {
+  const columns = db.pragma('table_info(chores)') as { name: string }[];
+  const hasRecurrenceDays = columns.some((c) => c.name === 'recurrence_days');
+  if (!hasRecurrenceDays) {
+    db.exec('ALTER TABLE chores ADD COLUMN recurrence_days TEXT');
+  }
+}

@@ -477,14 +477,20 @@
 
 .chore-row {
   display: flex;
-  align-items: center;
-  gap: var(--space-sm);
+  flex-direction: column;
+  gap: var(--space-xs);
   padding: 0.25rem 0;
   border-bottom: 1px solid var(--color-border);
 }
 
 .chore-row:last-child {
   border-bottom: none;
+}
+
+.chore-row__controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
 }
 
 .chore-row__icon {
@@ -494,6 +500,25 @@
 
 .chore-row__title {
   flex: 1;
+}
+
+.chore-day-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  padding-left: calc(2.5rem + var(--space-sm));
+}
+
+.chore-day-picker__day {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.chore-row--inactive {
+  opacity: 0.55;
 }
 
 /* ─── Tier rows ──────────────────────────────────────────────── */

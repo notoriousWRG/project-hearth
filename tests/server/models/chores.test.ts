@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import Database from 'better-sqlite3';
 import { createDb } from '../../../src/server/db/connection.js';
-import { runSchema } from '../../../src/server/db/schema.js';
+import { runSchema, runMigrations } from '../../../src/server/db/schema.js';
 import { createUser } from '../../../src/server/models/users.js';
 import {
   getChoresByUser,
@@ -22,6 +22,7 @@ let userId: number;
 beforeEach(() => {
   db = createDb(':memory:');
   runSchema(db);
+  runMigrations(db);
   userId = createUser(db, { name: 'Kid', type: 'child', icon: '', display_order: 0 }).id;
 });
 
@@ -42,6 +43,7 @@ describe('chores model', () => {
       completed: false,
       is_recurring: true,
       recurrence_rule: 'daily',
+      recurrence_days: null,
       is_bonus: false,
       bonus_amount: null,
       position: 0,
@@ -61,12 +63,66 @@ describe('chores model', () => {
       completed: false,
       is_recurring: false,
       recurrence_rule: null,
+      recurrence_days: null,
       is_bonus: true,
       bonus_amount: 2.5,
       position: 0,
     });
     expect(chore.is_bonus).toBe(true);
     expect(chore.bonus_amount).toBe(2.5);
+  });
+
+  it('createChore stores and parses recurrence_days as JSON array', () => {
+    const chore = createChore(db, {
+      user_id: userId,
+      title: 'Monday chore',
+      icon: '',
+      completed: false,
+      is_recurring: true,
+      recurrence_rule: 'weekly',
+      recurrence_days: [1, 3],
+      is_bonus: false,
+      bonus_amount: null,
+      position: 0,
+    });
+    expect(chore.recurrence_days).toEqual([1, 3]);
+  });
+
+  it('updateChore can set recurrence_days', () => {
+    const chore = createChore(db, {
+      user_id: userId,
+      title: 'Weekly',
+      icon: '',
+      completed: false,
+      is_recurring: true,
+      recurrence_rule: 'weekly',
+      recurrence_days: [1],
+      is_bonus: false,
+      bonus_amount: null,
+      position: 0,
+    });
+    const updated = updateChore(db, chore.id, { recurrence_days: [1, 5] });
+    expect(updated?.recurrence_days).toEqual([1, 5]);
+  });
+
+  it('updateChore can clear recurrence_days to null', () => {
+    const chore = createChore(db, {
+      user_id: userId,
+      title: 'Weekly',
+      icon: '',
+      completed: false,
+      is_recurring: true,
+      recurrence_rule: 'weekly',
+      recurrence_days: [2],
+      is_bonus: false,
+      bonus_amount: null,
+      position: 0,
+    });
+    const updated = updateChore(db, chore.id, {
+      recurrence_rule: 'daily',
+      recurrence_days: null,
+    });
+    expect(updated?.recurrence_days).toBeNull();
   });
 
   it('updateChore modifies fields', () => {
@@ -77,6 +133,7 @@ describe('chores model', () => {
       completed: false,
       is_recurring: false,
       recurrence_rule: null,
+      recurrence_days: null,
       is_bonus: false,
       bonus_amount: null,
       position: 0,
@@ -93,6 +150,7 @@ describe('chores model', () => {
       completed: false,
       is_recurring: false,
       recurrence_rule: null,
+      recurrence_days: null,
       is_bonus: false,
       bonus_amount: null,
       position: 0,
@@ -113,6 +171,7 @@ describe('chores model', () => {
       completed: false,
       is_recurring: true,
       recurrence_rule: 'daily',
+      recurrence_days: null,
       is_bonus: false,
       bonus_amount: null,
       position: 0,
@@ -132,6 +191,7 @@ describe('chores model', () => {
       completed: false,
       is_recurring: true,
       recurrence_rule: 'daily',
+      recurrence_days: null,
       is_bonus: false,
       bonus_amount: null,
       position: 0,
@@ -150,6 +210,7 @@ describe('chores model', () => {
       completed: false,
       is_recurring: true,
       recurrence_rule: 'daily',
+      recurrence_days: null,
       is_bonus: false,
       bonus_amount: null,
       position: 0,
@@ -161,6 +222,7 @@ describe('chores model', () => {
       completed: false,
       is_recurring: true,
       recurrence_rule: 'daily',
+      recurrence_days: null,
       is_bonus: false,
       bonus_amount: null,
       position: 1,
@@ -180,6 +242,7 @@ describe('chores model', () => {
       completed: false,
       is_recurring: true,
       recurrence_rule: 'daily',
+      recurrence_days: null,
       is_bonus: false,
       bonus_amount: null,
       position: 0,
@@ -198,6 +261,7 @@ describe('chores model', () => {
       completed: false,
       is_recurring: false,
       recurrence_rule: null,
+      recurrence_days: null,
       is_bonus: false,
       bonus_amount: null,
       position: 0,
@@ -209,6 +273,7 @@ describe('chores model', () => {
       completed: false,
       is_recurring: false,
       recurrence_rule: null,
+      recurrence_days: null,
       is_bonus: false,
       bonus_amount: null,
       position: 1,

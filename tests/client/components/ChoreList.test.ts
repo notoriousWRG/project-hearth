@@ -12,6 +12,7 @@ function makeChore(overrides: Partial<Chore> = {}): Chore {
     completed: false,
     is_recurring: false,
     recurrence_rule: null,
+    recurrence_days: null,
     is_bonus: false,
     bonus_amount: null,
     position: 0,

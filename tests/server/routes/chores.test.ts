@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import request from 'supertest';
 import Database from 'better-sqlite3';
 import type { Express } from 'express';
 import { createDb } from '../../../src/server/db/connection.js';
-import { runSchema } from '../../../src/server/db/schema.js';
+import { runSchema, runMigrations } from '../../../src/server/db/schema.js';
 import { createApp } from '../../../src/server/app.js';
 import { setAllowanceConfig, setTier } from '../../../src/server/models/allowance.js';
 
@@ -14,6 +14,7 @@ let userId: number;
 beforeEach(async () => {
   db = createDb(':memory:');
   runSchema(db);
+  runMigrations(db);
   app = createApp(db);
   const res = await request(app).post('/api/users').send({ name: 'Kid', type: 'child' });
   userId = res.body.id;
@@ -169,5 +170,136 @@ describe('GET /api/streaks/:userId', () => {
     expect(res.status).toBe(200);
     expect(res.body.current_streak).toBe(0);
     expect(res.body.user_id).toBe(userId);
+  });
+});
+
+describe('weekly chore filtering', () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('weekly chore appears on its scheduled day', async () => {
+    // Pin time to a Monday (day 1)
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-05-04T10:00:00Z')); // Monday
+
+    await request(app)
+      .post('/api/chores')
+      .send({
+        user_id: userId,
+        title: 'Monday only',
+        is_recurring: true,
+        recurrence_rule: 'weekly',
+        recurrence_days: [1], // Monday
+      });
+
+    const res = await request(app).get(`/api/chores?userId=${userId}`);
+    expect(res.status).toBe(200);
+    expect(res.body.length).toBe(1);
+    expect(res.body[0].title).toBe('Monday only');
+  });
+
+  it('weekly chore is hidden on other days', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-05-05T10:00:00Z')); // Tuesday
+
+    await request(app)
+      .post('/api/chores')
+      .send({
+        user_id: userId,
+        title: 'Monday only',
+        is_recurring: true,
+        recurrence_rule: 'weekly',
+        recurrence_days: [1], // Monday
+      });
+
+    const res = await request(app).get(`/api/chores?userId=${userId}`);
+    expect(res.status).toBe(200);
+    expect(res.body.length).toBe(0);
+  });
+
+  it('all=true returns weekly chore even on off days', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-05-05T10:00:00Z')); // Tuesday
+
+    await request(app)
+      .post('/api/chores')
+      .send({
+        user_id: userId,
+        title: 'Monday only',
+        is_recurring: true,
+        recurrence_rule: 'weekly',
+        recurrence_days: [1],
+      });
+
+    const res = await request(app).get(`/api/chores?userId=${userId}&all=true`);
+    expect(res.status).toBe(200);
+    expect(res.body.length).toBe(1);
+    expect(res.body[0].title).toBe('Monday only');
+  });
+
+  it('daily chore always appears regardless of day', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-05-07T10:00:00Z')); // Thursday
+
+    await request(app).post('/api/chores').send({
+      user_id: userId,
+      title: 'Daily task',
+      is_recurring: true,
+      recurrence_rule: 'daily',
+    });
+
+    const res = await request(app).get(`/api/chores?userId=${userId}`);
+    expect(res.status).toBe(200);
+    expect(res.body.length).toBe(1);
+  });
+
+  it('progress only counts weekly chores scheduled for today', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-05-04T10:00:00Z')); // Monday
+
+    // Monday chore (visible today)
+    const monRes = await request(app)
+      .post('/api/chores')
+      .send({
+        user_id: userId,
+        title: 'Monday task',
+        is_recurring: true,
+        recurrence_rule: 'weekly',
+        recurrence_days: [1],
+      });
+    // Wednesday chore (not visible today)
+    await request(app)
+      .post('/api/chores')
+      .send({
+        user_id: userId,
+        title: 'Wednesday task',
+        is_recurring: true,
+        recurrence_rule: 'weekly',
+        recurrence_days: [3],
+      });
+
+    await request(app).post(`/api/chores/${monRes.body.id}/complete`);
+
+    const prog = await request(app).get(`/api/chores/progress/${userId}`);
+    // Only the Monday chore is visible; it's completed → 100%
+    expect(prog.body.total).toBe(1);
+    expect(prog.body.completed).toBe(1);
+    expect(prog.body.percent).toBe(100);
+  });
+
+  it('POST /api/chores saves recurrence_days and returns them', async () => {
+    const res = await request(app)
+      .post('/api/chores')
+      .send({
+        user_id: userId,
+        title: 'Weekend',
+        is_recurring: true,
+        recurrence_rule: 'weekly',
+        recurrence_days: [0, 6],
+      });
+    expect(res.status).toBe(201);
+    expect(res.body.recurrence_days).toEqual([0, 6]);
+    expect(res.body.recurrence_rule).toBe('weekly');
   });
 });

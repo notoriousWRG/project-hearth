@@ -16,6 +16,7 @@ function makeChore(overrides: Partial<Chore> = {}): Chore {
     completed: false,
     is_recurring: true,
     recurrence_rule: 'daily',
+    recurrence_days: null,
     is_bonus: false,
     bonus_amount: null,
     position: 0,
@@ -27,7 +28,7 @@ function makeChore(overrides: Partial<Chore> = {}): Chore {
 
 function makeChoreApi(chores: Chore[] = []) {
   return {
-    list: vi.fn(async () => chores),
+    listAll: vi.fn(async () => chores),
     create: vi.fn(async (data: Partial<Chore>) => makeChore({ id: 99, ...data })),
     update: vi.fn(async (id: number, data: Partial<Chore>) => makeChore({ id, ...data })),
     remove: vi.fn(async () => undefined),
@@ -62,7 +63,7 @@ describe('createChoreManagementSection', () => {
     const el = createChoreManagementSection(children, api);
     container.appendChild(el);
     await vi.waitFor(() => {
-      expect(api.list).toHaveBeenCalledWith(1);
+      expect(api.listAll).toHaveBeenCalledWith(1);
       const titleInput = el.querySelector('li.chore-row .chore-row__title') as HTMLInputElement;
       expect(titleInput?.value).toBe('Feed the chickens');
     });
@@ -72,13 +73,13 @@ describe('createChoreManagementSection', () => {
     const api = makeChoreApi([]);
     const el = createChoreManagementSection(children, api);
     container.appendChild(el);
-    await vi.waitFor(() => expect(api.list).toHaveBeenCalledWith(1));
+    await vi.waitFor(() => expect(api.listAll).toHaveBeenCalledWith(1));
 
     const goldenTab = el.querySelector('[data-child-id="2"]') as HTMLButtonElement;
     goldenTab.click();
 
     await vi.waitFor(() => {
-      expect(api.list).toHaveBeenCalledWith(2);
+      expect(api.listAll).toHaveBeenCalledWith(2);
     });
   });
 
@@ -170,7 +171,7 @@ describe('createChoreManagementSection', () => {
     const activeChore = makeChore({ id: 1, title: 'Feed the chickens', icon: '🐔' });
     const api = makeChoreApi([activeChore]);
     // Target child (id=2) has no chores
-    api.list.mockImplementation(async (userId: number) => (userId === 1 ? [activeChore] : []));
+    api.listAll.mockImplementation(async (userId: number) => (userId === 1 ? [activeChore] : []));
     const el = createChoreManagementSection(children, api);
     container.appendChild(el);
     await vi.waitFor(() => expect(el.querySelector('[data-action="copy-to"]')).toBeTruthy());
@@ -188,7 +189,7 @@ describe('createChoreManagementSection', () => {
     const activeChore = makeChore({ id: 1, title: 'Feed the chickens' });
     const targetChore = makeChore({ id: 10, user_id: 2, title: 'Feed the chickens' });
     const api = makeChoreApi([activeChore]);
-    api.list.mockImplementation(async (userId: number) =>
+    api.listAll.mockImplementation(async (userId: number) =>
       userId === 1 ? [activeChore] : [targetChore],
     );
     const el = createChoreManagementSection(children, api);
@@ -212,6 +213,143 @@ describe('createChoreManagementSection', () => {
     await vi.waitFor(() => expect(el.querySelector('[data-action="delete"]')).toBeTruthy());
 
     expect(el.querySelector('[data-action="copy-to"]')).toBeNull();
+  });
+
+  it('weekly chore not scheduled today appears under "Not scheduled today"', async () => {
+    // Monday-only chore, but test runs on whatever day it is — use a day it definitely won't be
+    // by picking days [0,1,2,3,4,5,6] minus today
+    const todayDow = new Date().getDay();
+    const offDay = todayDow === 1 ? 2 : 1; // pick a day that isn't today
+    const api = makeChoreApi([
+      makeChore({ id: 1, title: 'Daily chore', recurrence_rule: 'daily', recurrence_days: null }),
+      makeChore({
+        id: 2,
+        title: 'Off-day chore',
+        recurrence_rule: 'weekly',
+        recurrence_days: [offDay as 0 | 1 | 2 | 3 | 4 | 5 | 6],
+      }),
+    ]);
+    const el = createChoreManagementSection(children, api);
+    container.appendChild(el);
+    await vi.waitFor(() => {
+      expect(el.querySelector('.chore-section-label')).toBeTruthy();
+      expect(el.querySelector('.chore-section-label')!.textContent).toContain(
+        'Not scheduled today',
+      );
+    });
+  });
+
+  it('inactive chore row does not have an undo button even when completed', async () => {
+    const todayDow = new Date().getDay();
+    const offDay = todayDow === 1 ? 2 : 1;
+    const api = makeChoreApi([
+      makeChore({
+        id: 2,
+        title: 'Off-day completed',
+        completed: true,
+        recurrence_rule: 'weekly',
+        recurrence_days: [offDay as 0 | 1 | 2 | 3 | 4 | 5 | 6],
+      }),
+    ]);
+    const el = createChoreManagementSection(children, api);
+    container.appendChild(el);
+    await vi.waitFor(() => expect(el.querySelector('.chore-row--inactive')).toBeTruthy());
+    expect(el.querySelector('[data-action="uncomplete"]')).toBeNull();
+  });
+
+  it('add form has a frequency selector defaulting to daily', async () => {
+    const api = makeChoreApi([]);
+    const el = createChoreManagementSection(children, api);
+    container.appendChild(el);
+    await vi.waitFor(() => expect(el.querySelector('form')).toBeTruthy());
+
+    const freqSelect = el.querySelector('select[data-field="frequency"]') as HTMLSelectElement;
+    expect(freqSelect).toBeTruthy();
+    expect(freqSelect.value).toBe('daily');
+  });
+
+  it('selecting weekly in add form shows day picker', async () => {
+    const api = makeChoreApi([]);
+    const el = createChoreManagementSection(children, api);
+    container.appendChild(el);
+    await vi.waitFor(() => expect(el.querySelector('select[data-field="frequency"]')).toBeTruthy());
+
+    const freqSelect = el.querySelector('select[data-field="frequency"]') as HTMLSelectElement;
+    freqSelect.value = 'weekly';
+    freqSelect.dispatchEvent(new Event('change', { bubbles: true }));
+
+    await vi.waitFor(() => {
+      expect(el.querySelector('.chore-day-picker')).toBeTruthy();
+    });
+  });
+
+  it('submitting weekly chore includes recurrence_rule weekly', async () => {
+    const api = makeChoreApi([]);
+    const el = createChoreManagementSection(children, api);
+    container.appendChild(el);
+    await vi.waitFor(() => expect(el.querySelector('form')).toBeTruthy());
+
+    const freqSelect = el.querySelector('select[data-field="frequency"]') as HTMLSelectElement;
+    freqSelect.value = 'weekly';
+    freqSelect.dispatchEvent(new Event('change', { bubbles: true }));
+
+    const titleInput = el.querySelector('input[data-field="title"]') as HTMLInputElement;
+    titleInput.value = 'Water plants';
+    el.querySelector('form')!.dispatchEvent(new Event('submit', { bubbles: true }));
+
+    await vi.waitFor(() => {
+      expect(api.create).toHaveBeenCalledWith(
+        expect.objectContaining({ recurrence_rule: 'weekly', title: 'Water plants' }),
+      );
+    });
+  });
+
+  it('chore row shows a frequency selector', async () => {
+    const api = makeChoreApi([makeChore({ id: 1, recurrence_rule: 'daily' })]);
+    const el = createChoreManagementSection(children, api);
+    container.appendChild(el);
+    await vi.waitFor(() => expect(el.querySelector('li.chore-row')).toBeTruthy());
+
+    const rowSelect = el.querySelector('li.chore-row select.chore-row__freq') as HTMLSelectElement;
+    expect(rowSelect).toBeTruthy();
+    expect(rowSelect.value).toBe('daily');
+  });
+
+  it('weekly chore row shows day picker', async () => {
+    const api = makeChoreApi([
+      makeChore({ id: 1, recurrence_rule: 'weekly', recurrence_days: [1, 3] }),
+    ]);
+    const el = createChoreManagementSection(children, api);
+    container.appendChild(el);
+    await vi.waitFor(() => {
+      expect(el.querySelector('.chore-day-picker')).toBeTruthy();
+    });
+  });
+
+  it('copy button copies recurrence_days for weekly chores', async () => {
+    const activeChore = makeChore({
+      id: 1,
+      title: 'Monday sweep',
+      icon: '🧹',
+      recurrence_rule: 'weekly',
+      recurrence_days: [1],
+    });
+    const api = makeChoreApi([activeChore]);
+    api.listAll.mockImplementation(async (userId: number) => (userId === 1 ? [activeChore] : []));
+    const el = createChoreManagementSection(children, api);
+    container.appendChild(el);
+    await vi.waitFor(() => expect(el.querySelector('[data-action="copy-to"]')).toBeTruthy());
+
+    (el.querySelector('[data-action="copy-to"]') as HTMLButtonElement).click();
+
+    await vi.waitFor(() => {
+      expect(api.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          recurrence_rule: 'weekly',
+          recurrence_days: [1],
+        }),
+      );
+    });
   });
 });
 

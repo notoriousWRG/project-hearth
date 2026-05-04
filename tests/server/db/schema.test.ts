@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import Database from 'better-sqlite3';
 import { createDb } from '../../../src/server/db/connection.js';
-import { runSchema } from '../../../src/server/db/schema.js';
+import { runSchema, runMigrations } from '../../../src/server/db/schema.js';
 
 const EXPECTED_TABLES = [
   'users',
@@ -76,5 +76,18 @@ describe('runSchema', () => {
 
   it('can be run twice without error (idempotent via IF NOT EXISTS)', () => {
     expect(() => runSchema(db)).not.toThrow();
+  });
+});
+
+describe('runMigrations', () => {
+  it('adds recurrence_days column to chores table', () => {
+    runMigrations(db);
+    const cols = db.prepare('PRAGMA table_info(chores)').all() as Array<{ name: string }>;
+    expect(cols.map((c) => c.name)).toContain('recurrence_days');
+  });
+
+  it('is idempotent when column already exists', () => {
+    runMigrations(db);
+    expect(() => runMigrations(db)).not.toThrow();
   });
 });
