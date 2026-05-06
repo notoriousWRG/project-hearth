@@ -50,7 +50,18 @@ CREATE TABLE IF NOT EXISTS allowance_config (
   amount           REAL    NOT NULL DEFAULT 0,
   streak_threshold INTEGER NOT NULL DEFAULT 5,
   reset_day        INTEGER NOT NULL DEFAULT 0, -- 0=Sunday per JS Date.getDay()
-  period_start     TEXT    NOT NULL DEFAULT (date('now'))
+  period_start     TEXT    NOT NULL DEFAULT (date('now')),
+  savings_balance  REAL    NOT NULL DEFAULT 0,
+  tithe_balance    REAL    NOT NULL DEFAULT 0,
+  checking_balance REAL    NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS allowance_daily_earnings (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  date          TEXT    NOT NULL,               -- ISO date YYYY-MM-DD
+  amount_earned REAL    NOT NULL DEFAULT 0,     -- always a multiple of $0.25
+  UNIQUE(user_id, date)
 );
 
 CREATE TABLE IF NOT EXISTS allowance_tiers (

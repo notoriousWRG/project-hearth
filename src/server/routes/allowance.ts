@@ -6,19 +6,39 @@ import {
   getTiers,
   setTier,
   deleteAllTiers,
+  getPayoutFraction,
+  roundToQuarter,
+  sumWeeklyEarnings,
+  updateBalances,
 } from '../models/allowance.js';
+import { getChoresByUser } from '../models/chores.js';
+import { requirePin } from '../middleware/pin.js';
+
+function getSundayOfWeek(date: Date): string {
+  const d = new Date(date);
+  const dow = d.getDay();
+  d.setDate(d.getDate() - dow);
+  return d.toISOString().slice(0, 10);
+}
+
+function getSaturdayOfWeek(date: Date): string {
+  const d = new Date(date);
+  const dow = d.getDay();
+  d.setDate(d.getDate() + (6 - dow));
+  return d.toISOString().slice(0, 10);
+}
 
 export function createAllowanceRouter(db: Database.Database): Router {
   const router = Router();
 
-  router.get('/:userId', (req, res) => {
+  router.get('/:userId', requirePin(db), (req, res) => {
     const userId = Number(req.params.userId);
     const config = getAllowanceConfig(db, userId) ?? null;
     const tiers = config ? getTiers(db, config.id) : [];
     res.json({ config, tiers });
   });
 
-  router.put('/:userId', (req, res) => {
+  router.put('/:userId', requirePin(db), (req, res) => {
     const userId = Number(req.params.userId);
     const { amount, streak_threshold, reset_day, period_start, tiers } = req.body as Record<
       string,
@@ -44,7 +64,73 @@ export function createAllowanceRouter(db: Database.Database): Router {
     res.json({ config, tiers: newTiers });
   });
 
-  router.post('/:userId/payout', (req, res) => {
+  router.get('/:userId/banking', (req, res) => {
+    const userId = Number(req.params.userId);
+    const config = getAllowanceConfig(db, userId);
+    if (!config) {
+      res.json({
+        thisWeekEarned: 0,
+        todayEarned: 0,
+        savingsBalance: 0,
+        titheBalance: 0,
+        checkingBalance: 0,
+      });
+      return;
+    }
+    const now = new Date();
+    const todayDow = now.getDay();
+    const weekStart = getSundayOfWeek(now);
+    const weekEnd = getSaturdayOfWeek(now);
+    const thisWeekEarned = sumWeeklyEarnings(db, userId, weekStart, weekEnd);
+
+    // Today's live earning from current chore completion state
+    const allChores = getChoresByUser(db, userId);
+    const todayChores = allChores.filter((c) => {
+      if (c.recurrence_rule === 'weekly') {
+        return c.recurrence_days?.includes(todayDow as 0 | 1 | 2 | 3 | 4 | 5 | 6) ?? false;
+      }
+      return true;
+    });
+    const total = todayChores.length;
+    const completed = todayChores.filter((c) => c.completed).length;
+    const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+    const tiers = getTiers(db, config.id);
+    const todayEarned = roundToQuarter((config.amount / 7) * getPayoutFraction(tiers, percent));
+
+    res.json({
+      thisWeekEarned,
+      todayEarned,
+      savingsBalance: config.savings_balance,
+      titheBalance: config.tithe_balance,
+      checkingBalance: config.checking_balance,
+    });
+  });
+
+  router.patch('/:userId/balances', requirePin(db), (req, res) => {
+    const userId = Number(req.params.userId);
+    const config = getAllowanceConfig(db, userId);
+    if (!config) {
+      res.status(404).json({ error: 'No allowance config for this user' });
+      return;
+    }
+    const { savings_balance, tithe_balance, checking_balance } = req.body as Record<
+      string,
+      unknown
+    >;
+    updateBalances(db, userId, {
+      savings_balance: typeof savings_balance === 'number' ? savings_balance : undefined,
+      tithe_balance: typeof tithe_balance === 'number' ? tithe_balance : undefined,
+      checking_balance: typeof checking_balance === 'number' ? checking_balance : undefined,
+    });
+    const updated = getAllowanceConfig(db, userId)!;
+    res.json({
+      savingsBalance: updated.savings_balance,
+      titheBalance: updated.tithe_balance,
+      checkingBalance: updated.checking_balance,
+    });
+  });
+
+  router.post('/:userId/payout', requirePin(db), (req, res) => {
     const userId = Number(req.params.userId);
     const config = getAllowanceConfig(db, userId);
     if (!config) {

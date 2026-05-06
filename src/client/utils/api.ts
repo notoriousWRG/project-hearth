@@ -9,6 +9,7 @@ import type {
   StreakRecord,
   AllowanceConfig,
   AllowanceTier,
+  BankingData,
   MealPlanEntry,
   NewMealPlanEntry,
   GroceryItem,
@@ -142,6 +143,10 @@ export interface AllowanceSavePayload {
   tiers: { percent_complete: number; percent_payout: number }[];
 }
 
+export const allowance = {
+  banking: (userId: number) => get<BankingData>(`/allowance/${userId}/banking`),
+};
+
 export function createPinAllowanceApi(pin: string) {
   const h = { 'x-pin': pin };
   return {
@@ -161,5 +166,15 @@ export function createPinAllowanceApi(pin: string) {
       ),
     payout: (userId: number) =>
       request<AllowanceConfig>('POST', `/allowance/${userId}/payout`, {}, h),
+    updateBalances: (
+      userId: number,
+      balances: { savings_balance?: number; tithe_balance?: number; checking_balance?: number },
+    ) =>
+      request<{ savingsBalance: number; titheBalance: number; checkingBalance: number }>(
+        'PATCH',
+        `/allowance/${userId}/balances`,
+        balances,
+        h,
+      ),
   };
 }

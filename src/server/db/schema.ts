@@ -49,7 +49,18 @@ CREATE TABLE IF NOT EXISTS allowance_config (
   amount           REAL    NOT NULL DEFAULT 0,
   streak_threshold INTEGER NOT NULL DEFAULT 5,
   reset_day        INTEGER NOT NULL DEFAULT 0,
-  period_start     TEXT    NOT NULL DEFAULT (date('now'))
+  period_start     TEXT    NOT NULL DEFAULT (date('now')),
+  savings_balance  REAL    NOT NULL DEFAULT 0,
+  tithe_balance    REAL    NOT NULL DEFAULT 0,
+  checking_balance REAL    NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS allowance_daily_earnings (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  date          TEXT    NOT NULL,
+  amount_earned REAL    NOT NULL DEFAULT 0,
+  UNIQUE(user_id, date)
 );
 
 CREATE TABLE IF NOT EXISTS allowance_tiers (
@@ -103,9 +114,28 @@ export function runSchema(db: Database.Database): void {
 }
 
 export function runMigrations(db: Database.Database): void {
-  const columns = db.pragma('table_info(chores)') as { name: string }[];
-  const hasRecurrenceDays = columns.some((c) => c.name === 'recurrence_days');
-  if (!hasRecurrenceDays) {
+  const choreColumns = db.pragma('table_info(chores)') as { name: string }[];
+  if (!choreColumns.some((c) => c.name === 'recurrence_days')) {
     db.exec('ALTER TABLE chores ADD COLUMN recurrence_days TEXT');
+  }
+
+  const configColumns = db.pragma('table_info(allowance_config)') as { name: string }[];
+  if (!configColumns.some((c) => c.name === 'savings_balance')) {
+    db.exec('ALTER TABLE allowance_config ADD COLUMN savings_balance REAL NOT NULL DEFAULT 0');
+    db.exec('ALTER TABLE allowance_config ADD COLUMN tithe_balance REAL NOT NULL DEFAULT 0');
+    db.exec('ALTER TABLE allowance_config ADD COLUMN checking_balance REAL NOT NULL DEFAULT 0');
+  }
+
+  const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as {
+    name: string;
+  }[];
+  if (!tables.some((t) => t.name === 'allowance_daily_earnings')) {
+    db.exec(`CREATE TABLE allowance_daily_earnings (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      date          TEXT    NOT NULL,
+      amount_earned REAL    NOT NULL DEFAULT 0,
+      UNIQUE(user_id, date)
+    )`);
   }
 }

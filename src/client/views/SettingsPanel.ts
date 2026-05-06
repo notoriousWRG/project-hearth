@@ -6,12 +6,21 @@ import { applyTheme, THEMES, type Theme } from '../utils/theme.js';
 import { createPinSettingsApi, createPinAllowanceApi, createPinStreaksApi } from '../utils/api.js';
 import * as api from '../utils/api.js';
 
-type SettingsTab = 'users' | 'chores' | 'allowance' | 'theme' | 'pin' | 'payout' | 'reset-time';
+type SettingsTab =
+  | 'users'
+  | 'chores'
+  | 'allowance'
+  | 'balances'
+  | 'theme'
+  | 'pin'
+  | 'payout'
+  | 'reset-time';
 
 const TAB_LABELS: Record<SettingsTab, string> = {
   users: 'Users',
   chores: 'Chores',
   allowance: 'Allowance',
+  balances: 'Balances',
   theme: 'Theme',
   pin: 'PIN',
   payout: 'Payout',
@@ -78,6 +87,8 @@ export function createSettingsPanel(
       content.appendChild(createChoreManagementSection(childUsers, api.chores, pinStreaksApi));
     } else if (activeTab === 'allowance') {
       content.appendChild(createAllowanceConfigSection(childUsers, pinAllowanceApi));
+    } else if (activeTab === 'balances') {
+      content.appendChild(createBalancesSection(childUsers, pinAllowanceApi));
     } else if (activeTab === 'theme') {
       content.appendChild(createThemeSection());
     } else if (activeTab === 'pin') {
@@ -266,6 +277,112 @@ function createPayoutSection(
     row.appendChild(btn);
     row.appendChild(msg);
     section.appendChild(row);
+  }
+
+  return section;
+}
+
+// ─── Balances section ─────────────────────────────────────────────────────────
+
+function createBalancesSection(
+  childUsers: User[],
+  pinAllowanceApi: ReturnType<typeof createPinAllowanceApi>,
+): HTMLElement {
+  const section = document.createElement('section');
+  section.className = 'settings-section';
+
+  const heading = document.createElement('h2');
+  heading.textContent = 'Balances';
+  section.appendChild(heading);
+
+  const desc = document.createElement('p');
+  desc.textContent =
+    'Adjust savings, tithe, and checking balances. Values are rounded to the nearest $0.25.';
+  section.appendChild(desc);
+
+  if (childUsers.length === 0) {
+    const empty = document.createElement('p');
+    empty.textContent = 'No children configured.';
+    section.appendChild(empty);
+    return section;
+  }
+
+  for (const child of childUsers) {
+    const childSection = document.createElement('div');
+    childSection.className = 'balances-child';
+
+    const childHeading = document.createElement('h3');
+    childHeading.textContent = `${child.icon || '⭐'} ${child.name}`;
+    childSection.appendChild(childHeading);
+
+    const form = document.createElement('form');
+    form.className = 'balances-form';
+
+    function makeField(label: string, fieldName: string): HTMLInputElement {
+      const row = document.createElement('div');
+      row.className = 'balances-field';
+      const lbl = document.createElement('label');
+      lbl.textContent = label;
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.name = fieldName;
+      input.step = '0.25';
+      input.min = '0';
+      input.value = '0.00';
+      lbl.appendChild(input);
+      row.appendChild(lbl);
+      form.appendChild(row);
+      return input;
+    }
+
+    const savingsInput = makeField('Savings ($)', 'savings_balance');
+    const titheInput = makeField('Tithe ($)', 'tithe_balance');
+    const checkingInput = makeField('Checking ($)', 'checking_balance');
+
+    const statusMsg = document.createElement('p');
+    statusMsg.className = 'settings-section__success';
+    statusMsg.hidden = true;
+    statusMsg.textContent = 'Saved.';
+    form.appendChild(statusMsg);
+
+    const saveBtn = document.createElement('button');
+    saveBtn.type = 'submit';
+    saveBtn.textContent = 'Save';
+    form.appendChild(saveBtn);
+
+    // Load current values
+    void pinAllowanceApi.get(child.id).then(({ config }) => {
+      if (config) {
+        savingsInput.value = config.savings_balance.toFixed(2);
+        titheInput.value = config.tithe_balance.toFixed(2);
+        checkingInput.value = config.checking_balance.toFixed(2);
+      }
+    });
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      statusMsg.hidden = true;
+      saveBtn.disabled = true;
+      void pinAllowanceApi
+        .updateBalances(child.id, {
+          savings_balance: Number(savingsInput.value),
+          tithe_balance: Number(titheInput.value),
+          checking_balance: Number(checkingInput.value),
+        })
+        .then((updated) => {
+          savingsInput.value = updated.savingsBalance.toFixed(2);
+          titheInput.value = updated.titheBalance.toFixed(2);
+          checkingInput.value = updated.checkingBalance.toFixed(2);
+          saveBtn.disabled = false;
+          statusMsg.hidden = false;
+          setTimeout(() => {
+            statusMsg.hidden = true;
+          }, 3000);
+        });
+    });
+
+    childSection.appendChild(form);
+    section.appendChild(childSection);
   }
 
   return section;

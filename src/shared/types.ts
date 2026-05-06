@@ -55,6 +55,17 @@ export interface AllowanceConfig {
   streak_threshold: number;
   reset_day: number;
   period_start: string;
+  savings_balance: number;
+  tithe_balance: number;
+  checking_balance: number;
+}
+
+export interface BankingData {
+  thisWeekEarned: number;
+  todayEarned: number;
+  savingsBalance: number;
+  titheBalance: number;
+  checkingBalance: number;
 }
 
 export interface AllowanceTier {
