@@ -1,7 +1,10 @@
 import { Router } from 'express';
 import type Database from 'better-sqlite3';
+import type { GroceryCategory } from '../../shared/types.js';
 import { getMealsByWeek, getMealById, upsertMeal, deleteMeal } from '../models/meals.js';
-import { createGroceryItem, getItemsByMealPlan } from '../models/grocery.js';
+import { getMealById as getSavedMeal } from '../models/savedMeals.js';
+import { getInventoryItems } from '../models/inventory.js';
+import { getAllGroceryItems, createGroceryItem } from '../models/grocery.js';
 
 export function createMealsRouter(db: Database.Database): Router {
   const router = Router();
@@ -16,7 +19,7 @@ export function createMealsRouter(db: Database.Database): Router {
   });
 
   router.put('/', (req, res) => {
-    const { week_start_date, day_of_week, meal_type, description } = req.body as Record<
+    const { week_start_date, day_of_week, meal_type, description, meal_id } = req.body as Record<
       string,
       unknown
     >;
@@ -24,11 +27,23 @@ export function createMealsRouter(db: Database.Database): Router {
       res.status(400).json({ error: 'week_start_date, day_of_week, and meal_type are required' });
       return;
     }
+
+    let resolvedDescription = description ? String(description) : '';
+    const resolvedMealId = meal_id != null ? Number(meal_id) : null;
+
+    if (resolvedMealId != null) {
+      const savedMeal = getSavedMeal(db, resolvedMealId);
+      if (savedMeal) {
+        resolvedDescription = savedMeal.name;
+      }
+    }
+
     const entry = upsertMeal(db, {
       week_start_date: String(week_start_date),
       day_of_week: Number(day_of_week) as 0 | 1 | 2 | 3 | 4 | 5 | 6,
       meal_type: meal_type as 'breakfast' | 'lunch' | 'dinner' | 'snack',
-      description: description ? String(description) : '',
+      description: resolvedDescription,
+      meal_id: resolvedMealId,
     });
     res.json(entry);
   });
@@ -49,23 +64,58 @@ export function createMealsRouter(db: Database.Database): Router {
       res.status(400).json({ error: 'week is required (YYYY-MM-DD)' });
       return;
     }
-    const meals = getMealsByWeek(db, week);
-    const created = [];
-    for (const meal of meals) {
-      if (!meal.description) continue;
-      // Skip if grocery items already exist for this meal
-      const existing = getItemsByMealPlan(db, meal.id);
-      if (existing.length > 0) continue;
+
+    // Step 1: fetch all plan entries for the week
+    const planEntries = getMealsByWeek(db, week);
+
+    // Step 2: collect unique ingredients keyed by lowercase name
+    const ingredientMap = new Map<string, { name: string; category: GroceryCategory }>();
+    for (const entry of planEntries) {
+      if (entry.meal_id != null) {
+        const savedMeal = getSavedMeal(db, entry.meal_id);
+        if (savedMeal) {
+          for (const ing of savedMeal.ingredients) {
+            const key = ing.name.toLowerCase();
+            if (!ingredientMap.has(key)) {
+              ingredientMap.set(key, { name: ing.name, category: ing.category });
+            }
+          }
+        }
+      } else if (entry.description) {
+        // Legacy freetext entry — treat description as a single ingredient
+        const key = entry.description.toLowerCase();
+        if (!ingredientMap.has(key)) {
+          ingredientMap.set(key, { name: entry.description, category: 'other' });
+        }
+      }
+    }
+
+    // Step 3: subtract inventory (any location, case-insensitive)
+    const inventoryItems = getInventoryItems(db);
+    for (const inv of inventoryItems) {
+      ingredientMap.delete(inv.name.toLowerCase());
+    }
+
+    // Step 4: skip if an unchecked grocery item already exists with same name
+    const existingGrocery = getAllGroceryItems(db);
+    const existingUncheckedNames = new Set(
+      existingGrocery.filter((i) => !i.checked).map((i) => i.name.toLowerCase()),
+    );
+
+    const added = [];
+    for (const [key, { name, category }] of ingredientMap) {
+      if (existingUncheckedNames.has(key)) continue;
       const item = createGroceryItem(db, {
-        name: meal.description,
-        category: 'other',
+        name,
+        category,
         checked: false,
         source: 'meal_plan',
-        meal_plan_id: meal.id,
+        meal_plan_id: null,
       });
-      created.push(item);
+      added.push(item);
     }
-    res.json(created);
+
+    res.json(added);
   });
 
   router.get('/:id', (req, res) => {
