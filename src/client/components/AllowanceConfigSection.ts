@@ -114,7 +114,7 @@ export function createAllowanceConfigSection(
     content.innerHTML = '';
 
     const amountLabel = document.createElement('label');
-    amountLabel.textContent = 'Allowance amount ($)';
+    amountLabel.textContent = 'Weekly allowance eligible ($)';
     const amountInput = document.createElement('input');
     amountInput.type = 'number';
     amountInput.min = '0';
@@ -123,16 +123,6 @@ export function createAllowanceConfigSection(
     amountInput.value = config ? String(config.amount) : '0';
     amountLabel.appendChild(amountInput);
     content.appendChild(amountLabel);
-
-    const streakLabel = document.createElement('label');
-    streakLabel.textContent = 'Streak bonus threshold (days)';
-    const streakInput = document.createElement('input');
-    streakInput.type = 'number';
-    streakInput.min = '1';
-    streakInput.dataset.field = 'streak-threshold';
-    streakInput.value = config ? String(config.streak_threshold) : '7';
-    streakLabel.appendChild(streakInput);
-    content.appendChild(streakLabel);
 
     const tiersHeading = document.createElement('h3');
     tiersHeading.textContent = 'Completion tiers';
@@ -159,7 +149,7 @@ export function createAllowanceConfigSection(
     saveBtn.addEventListener('click', () => {
       const payload: AllowanceSavePayload = {
         amount: Number(amountInput.value),
-        streak_threshold: Number(streakInput.value),
+        streak_threshold: config?.streak_threshold ?? 7,
         reset_day: config?.reset_day ?? 0,
         period_start: config?.period_start ?? new Date().toISOString().slice(0, 10),
         tiers: localTiers.map((t) => ({ ...t })),

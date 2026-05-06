@@ -1,7 +1,6 @@
 import type { User } from '../../shared/types.js';
 import { createChildChoreList } from '../components/ChildChoreList.js';
 import { createProgressPanel } from '../components/ProgressPanel.js';
-import { createStreakDisplay } from '../components/StreakDisplay.js';
 import { createBankingView } from './BankingView.js';
 import * as api from '../utils/api.js';
 
@@ -37,26 +36,12 @@ export function createChildDashboard(user: User): HTMLElement {
     const progressPanel = createProgressPanel({ total: 0, completed: 0, percent: 0, earned: 0 });
     view.appendChild(progressPanel);
 
-    const streakEl = createStreakDisplay(
-      {
-        id: 0,
-        user_id: user.id,
-        current_streak: 0,
-        longest_streak: 0,
-        last_completed_date: null,
-      },
-      7,
-    );
-    view.appendChild(streakEl);
-
     async function refreshProgress(): Promise<void> {
-      const [progress, streak, banking] = await Promise.all([
+      const [progress, banking] = await Promise.all([
         api.chores.progress(user.id),
-        api.streaks.get(user.id),
         api.allowance.banking(user.id),
       ]);
       progressPanel.update(progress);
-      streakEl.update(streak, progress.streak_threshold);
       const total = banking.thisWeekEarned + banking.todayEarned;
       earnedBadge.textContent = `$${total.toFixed(2)} this week`;
     }

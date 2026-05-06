@@ -64,8 +64,7 @@ export function createFamilySummary(onSelectChild: (userId: number) => void): Su
 
         const stats = document.createElement('div');
         stats.className = 'summary-child-stats';
-        let statsText = `${child.completed} of ${child.total} chores`;
-        if (child.streak > 0) statsText += ` · 🔥 ${child.streak} day streak`;
+        const statsText = `${child.completed} of ${child.total} chores`;
         stats.textContent = statsText;
         header.appendChild(stats);
 
