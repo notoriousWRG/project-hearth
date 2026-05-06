@@ -33,7 +33,11 @@ export function createSummaryRouter(db: Database.Database): Router {
     const children = allUsers.filter((u) => u.type === 'child');
 
     const childSummaries: ChildSummary[] = children.map((child) => {
-      const chores = getChoresByUser(db, child.id);
+      const allChores = getChoresByUser(db, child.id);
+      const chores = allChores.filter((c) => {
+        if (c.recurrence_rule !== 'weekly') return true;
+        return c.recurrence_days?.includes(todayDow as 0 | 1 | 2 | 3 | 4 | 5 | 6) ?? false;
+      });
       const total = chores.length;
       const completed = chores.filter((c) => c.completed).length;
       const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
@@ -48,13 +52,7 @@ export function createSummaryRouter(db: Database.Database): Router {
       const streak = getStreakRecord(db, child.id)?.current_streak ?? 0;
 
       const nextChores: QuickActionChore[] = chores
-        .filter((c) => {
-          if (c.completed) return false;
-          if (c.recurrence_rule === 'weekly') {
-            return c.recurrence_days?.includes(todayDow as 0 | 1 | 2 | 3 | 4 | 5 | 6) ?? false;
-          }
-          return true;
-        })
+        .filter((c) => !c.completed)
         .slice(0, 3)
         .map((c) => ({ id: c.id, title: c.title, icon: c.icon }));
 
