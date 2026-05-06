@@ -16,6 +16,9 @@ const EXPECTED_TABLES = [
   'grocery_items',
   'reminders',
   'settings',
+  'meals',
+  'meal_ingredients',
+  'inventory_items',
 ];
 
 let db: Database.Database;
@@ -30,7 +33,7 @@ afterEach(() => {
 });
 
 describe('runSchema', () => {
-  it('creates all 12 tables', () => {
+  it('creates all 15 tables', () => {
     const rows = db
       .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
       .all() as Array<{ name: string }>;
@@ -78,6 +81,32 @@ describe('runSchema', () => {
   it('can be run twice without error (idempotent via IF NOT EXISTS)', () => {
     expect(() => runSchema(db)).not.toThrow();
   });
+
+  it('meals table has expected columns', () => {
+    const cols = db.prepare('PRAGMA table_info(meals)').all() as Array<{ name: string }>;
+    const names = cols.map((c) => c.name);
+    expect(names).toContain('id');
+    expect(names).toContain('name');
+    expect(names).toContain('created_at');
+  });
+
+  it('meal_ingredients has foreign key to meals', () => {
+    const fks = db.prepare('PRAGMA foreign_key_list(meal_ingredients)').all() as Array<{
+      table: string;
+    }>;
+    expect(fks.some((fk) => fk.table === 'meals')).toBe(true);
+  });
+
+  it('inventory_items has UNIQUE(name, location) constraint', () => {
+    db.exec(
+      `INSERT INTO inventory_items (name, category, location) VALUES ('milk', 'dairy', 'pantry')`,
+    );
+    expect(() =>
+      db.exec(
+        `INSERT INTO inventory_items (name, category, location) VALUES ('milk', 'dairy', 'pantry')`,
+      ),
+    ).toThrow();
+  });
 });
 
 describe('runMigrations', () => {
@@ -85,6 +114,12 @@ describe('runMigrations', () => {
     runMigrations(db);
     const cols = db.prepare('PRAGMA table_info(chores)').all() as Array<{ name: string }>;
     expect(cols.map((c) => c.name)).toContain('recurrence_days');
+  });
+
+  it('adds meal_id column to meal_plan table', () => {
+    runMigrations(db);
+    const cols = db.prepare('PRAGMA table_info(meal_plan)').all() as Array<{ name: string }>;
+    expect(cols.map((c) => c.name)).toContain('meal_id');
   });
 
   it('is idempotent when column already exists', () => {

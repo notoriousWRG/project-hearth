@@ -84,7 +84,8 @@ CREATE TABLE IF NOT EXISTS meal_plan (
   week_start_date TEXT    NOT NULL,            -- ISO date of Monday
   day_of_week     INTEGER NOT NULL,            -- 0=Sunday … 6=Saturday
   meal_type       TEXT    NOT NULL,            -- 'breakfast' | 'lunch' | 'dinner' | 'snack'
-  description     TEXT    NOT NULL DEFAULT ''
+  description     TEXT    NOT NULL DEFAULT '',
+  meal_id         INTEGER REFERENCES meals(id) ON DELETE SET NULL  -- added via migration
 );
 
 CREATE TABLE IF NOT EXISTS grocery_items (
@@ -107,4 +108,30 @@ CREATE TABLE IF NOT EXISTS reminders (
 CREATE TABLE IF NOT EXISTS settings (
   key   TEXT PRIMARY KEY,
   value TEXT NOT NULL                          -- JSON-encoded value
+);
+
+-- Saved meals (master list)
+CREATE TABLE IF NOT EXISTS meals (
+  id         INTEGER PRIMARY KEY AUTOINCREMENT,
+  name       TEXT    NOT NULL UNIQUE COLLATE NOCASE,
+  created_at TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+
+-- Ingredients attached to a saved meal
+CREATE TABLE IF NOT EXISTS meal_ingredients (
+  id       INTEGER PRIMARY KEY AUTOINCREMENT,
+  meal_id  INTEGER NOT NULL REFERENCES meals(id) ON DELETE CASCADE,
+  name     TEXT    NOT NULL,
+  category TEXT    NOT NULL DEFAULT 'other',   -- matches GroceryCategory
+  position INTEGER NOT NULL DEFAULT 0
+);
+
+-- Persistent pantry/icebox inventory
+CREATE TABLE IF NOT EXISTS inventory_items (
+  id       INTEGER PRIMARY KEY AUTOINCREMENT,
+  name     TEXT    NOT NULL COLLATE NOCASE,
+  category TEXT    NOT NULL DEFAULT 'other',
+  location TEXT    NOT NULL,                   -- 'pantry' | 'icebox'
+  notes    TEXT    NOT NULL DEFAULT '',
+  UNIQUE(name, location)
 );

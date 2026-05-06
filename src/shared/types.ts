@@ -4,6 +4,7 @@ export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 export type DayOfWeek = 0 | 1 | 2 | 3 | 4 | 5 | 6;
 export type GroceryCategory = 'produce' | 'protein' | 'pantry' | 'dairy' | 'household' | 'other';
 export type GrocerySource = 'manual' | 'meal_plan';
+export type InventoryLocation = 'pantry' | 'icebox';
 
 export interface User {
   id: number;
@@ -83,12 +84,36 @@ export interface StreakRecord {
   last_completed_date: string | null;
 }
 
+export interface MealIngredient {
+  id: number;
+  meal_id: number;
+  name: string;
+  category: GroceryCategory;
+  position: number;
+}
+
+export interface Meal {
+  id: number;
+  name: string;
+  created_at: string;
+  ingredients: MealIngredient[];
+}
+
+export interface InventoryItem {
+  id: number;
+  name: string;
+  category: GroceryCategory;
+  location: InventoryLocation;
+  notes: string;
+}
+
 export interface MealPlanEntry {
   id: number;
   week_start_date: string;
   day_of_week: DayOfWeek;
   meal_type: MealType;
   description: string;
+  meal_id: number | null;
 }
 
 export interface GroceryItem {
@@ -114,6 +139,9 @@ export type NewChore = Omit<Chore, 'id' | 'created_at' | 'completed_at'>;
 export type NewMealPlanEntry = Omit<MealPlanEntry, 'id'>;
 export type NewGroceryItem = Omit<GroceryItem, 'id'>;
 export type NewReminder = Omit<Reminder, 'id' | 'created_at' | 'dismissed'>;
+export type NewMeal = Pick<Meal, 'name'>;
+export type NewMealIngredient = Omit<MealIngredient, 'id' | 'meal_id'>;
+export type NewInventoryItem = Omit<InventoryItem, 'id'>;
 
 export interface QuickActionChore {
   id: number;
