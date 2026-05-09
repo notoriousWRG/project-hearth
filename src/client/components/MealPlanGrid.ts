@@ -5,6 +5,7 @@ interface MealApi {
   upsert: (data: NewMealPlanEntry) => Promise<MealPlanEntry>;
   remove: (id: number) => Promise<void>;
   generateGrocery: (weekStartDate: string) => Promise<unknown[]>;
+  listSavedMeals: () => Promise<{ id: number; name: string }[]>;
 }
 
 // Day order for display: Mon=1 … Sat=6, Sun=0
@@ -72,6 +73,11 @@ export function createMealPlanGrid(api: MealApi): HTMLElement {
   let currentWeek = getWeekStart();
   let mealMap: MealMap = buildMealMap([]);
   let editingSlot: { day: DayOfWeek; type: MealType } | null = null;
+  let savedMeals: { id: number; name: string }[] = [];
+
+  void api.listSavedMeals().then((meals) => {
+    savedMeals = meals;
+  });
 
   // Toolbar
   const toolbar = document.createElement('div');
@@ -203,6 +209,7 @@ export function createMealPlanGrid(api: MealApi): HTMLElement {
               day_of_week: dow,
               meal_type: mealType,
               description,
+              meal_id: null,
             });
             mealMap.get(dow)?.set(mealType, saved);
           }
@@ -212,7 +219,8 @@ export function createMealPlanGrid(api: MealApi): HTMLElement {
         renderGrid();
       };
 
-      input.addEventListener('blur', save);
+      const blurHandler = () => void save();
+      input.addEventListener('blur', blurHandler);
       input.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
           e.preventDefault();
@@ -222,6 +230,60 @@ export function createMealPlanGrid(api: MealApi): HTMLElement {
           editingSlot = null;
           renderGrid();
         }
+      });
+
+      const pickBtn = document.createElement('button');
+      pickBtn.type = 'button';
+      pickBtn.className = 'meal-slot__picker-btn';
+      pickBtn.dataset.action = 'pick-meal';
+      pickBtn.textContent = 'Pick saved meal';
+      slot.appendChild(pickBtn);
+
+      // Prevent the input from losing focus (and triggering save) when the
+      // pick button is clicked — mousedown fires before blur.
+      pickBtn.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+      });
+
+      pickBtn.addEventListener('click', () => {
+        // Once the user enters picker mode, the blur-triggered save must be
+        // suppressed so that clicking the <select> doesn't close the editor.
+        input.removeEventListener('blur', blurHandler);
+        pickBtn.remove();
+        const select = document.createElement('select');
+        select.className = 'meal-slot__saved-meal-picker';
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = '— pick —';
+        select.appendChild(placeholder);
+        for (const meal of savedMeals) {
+          const opt = document.createElement('option');
+          opt.value = String(meal.id);
+          opt.textContent = meal.name;
+          select.appendChild(opt);
+        }
+        slot.appendChild(select);
+
+        select.addEventListener('change', async () => {
+          const id = Number(select.value);
+          if (!id) return;
+          const meal = savedMeals.find((m) => m.id === id);
+          if (!meal) return;
+          editingSlot = null;
+          try {
+            const saved = await api.upsert({
+              week_start_date: currentWeek,
+              day_of_week: dow,
+              meal_type: mealType,
+              description: meal.name,
+              meal_id: meal.id,
+            });
+            mealMap.get(dow)?.set(mealType, saved);
+          } catch {
+            // silently restore on error
+          }
+          renderGrid();
+        });
       });
     } else {
       const text = document.createElement('span');
@@ -261,7 +323,7 @@ export function createMealPlanGrid(api: MealApi): HTMLElement {
     showFeedback(
       created.length > 0
         ? `Added ${created.length} item${created.length !== 1 ? 's' : ''}`
-        : 'Already up to date',
+        : 'Nothing new — pantry covers it or list is current',
     );
   });
 

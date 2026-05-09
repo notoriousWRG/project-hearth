@@ -7,6 +7,7 @@ interface GroceryApi {
   check: (id: number, checked: boolean) => Promise<GroceryItem>;
   remove: (id: number) => Promise<void>;
   clearChecked: () => Promise<{ deleted: number }>;
+  export: () => Promise<{ text: string }>;
 }
 
 const CATEGORY_ORDER: GroceryCategory[] = [
@@ -44,12 +45,39 @@ export function createGroceryList(api: GroceryApi): HTMLElement {
   // Toolbar
   const toolbar = document.createElement('div');
   toolbar.className = 'grocery-list__toolbar';
+
   const clearBtn = document.createElement('button');
   clearBtn.dataset.action = 'clear-checked';
   clearBtn.textContent = 'Clear checked';
   clearBtn.setAttribute('aria-label', 'Clear all checked items');
   toolbar.appendChild(clearBtn);
+
+  const exportBtn = document.createElement('button');
+  exportBtn.dataset.action = 'export';
+  exportBtn.textContent = 'Export list';
+  toolbar.appendChild(exportBtn);
+
   section.appendChild(toolbar);
+
+  // Export panel (hidden until export is clicked)
+  const exportPanel = document.createElement('div');
+  exportPanel.className = 'grocery-export-panel';
+  exportPanel.hidden = true;
+
+  const exportClose = document.createElement('button');
+  exportClose.type = 'button';
+  exportClose.dataset.action = 'close-export';
+  exportClose.textContent = '✕ Close';
+  exportClose.addEventListener('click', () => {
+    exportPanel.hidden = true;
+  });
+
+  const exportPre = document.createElement('pre');
+  exportPre.className = 'grocery-export-panel__text';
+
+  exportPanel.appendChild(exportClose);
+  exportPanel.appendChild(exportPre);
+  section.appendChild(exportPanel);
 
   // Add form
   const form = document.createElement('form');
@@ -160,6 +188,16 @@ export function createGroceryList(api: GroceryApi): HTMLElement {
     await api.clearChecked();
     items = items.filter((i) => !i.checked);
     rerender();
+  });
+
+  exportBtn.addEventListener('click', async () => {
+    if (!exportPanel.hidden) {
+      exportPanel.hidden = true;
+      return;
+    }
+    const { text } = await api.export();
+    exportPre.textContent = text;
+    exportPanel.hidden = false;
   });
 
   form.addEventListener('submit', async (e) => {

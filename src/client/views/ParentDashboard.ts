@@ -45,7 +45,9 @@ export function createParentDashboard(userId: number): HTMLElement {
       grid.appendChild(createRemindersPanel(api.reminders));
       content.appendChild(grid);
     } else if (activeTab === 'meals') {
-      content.appendChild(createMealPlanGrid(api.meals));
+      content.appendChild(
+        createMealPlanGrid({ ...api.meals, listSavedMeals: api.savedMeals.list }),
+      );
     } else {
       content.appendChild(createGroceryList(api.grocery));
     }
