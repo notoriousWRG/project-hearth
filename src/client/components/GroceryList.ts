@@ -171,7 +171,7 @@ export function createGroceryList(api: GroceryApi, opts: GroceryListOpts = {}): 
     li.appendChild(label);
     li.appendChild(deleteBtn);
 
-    if (item.checked && opts.onMoveToInventory) {
+    if (opts.onMoveToInventory) {
       const moveActions = document.createElement('div');
       moveActions.className = 'grocery-item__move-actions';
 

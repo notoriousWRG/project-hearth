@@ -132,13 +132,14 @@ describe('createGroceryView', () => {
     });
   });
 
-  it('unchecked items do not show move buttons', async () => {
+  it('unchecked items show move buttons', async () => {
     const api = makeApi([makeGroceryItem({ id: 1, name: 'Milk', checked: false })]);
     const el = createGroceryView(api);
     container.appendChild(el);
 
     await vi.waitFor(() => expect(el.textContent).toContain('Milk'));
-    expect(el.querySelector('[data-action="move-to-pantry"]')).toBeNull();
+    expect(el.querySelector('[data-action="move-to-pantry"]')).toBeTruthy();
+    expect(el.querySelector('[data-action="move-to-icebox"]')).toBeTruthy();
   });
 
   it('move-to-pantry creates an inventory row and removes the grocery item', async () => {
