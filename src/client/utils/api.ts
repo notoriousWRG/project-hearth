@@ -6,6 +6,8 @@ import type {
   Chore,
   NewChore,
   ChoreCompletion,
+  ChoreHistoryDay,
+  ChoreHistoryToggleResult,
   StreakRecord,
   AllowanceConfig,
   AllowanceTier,
@@ -69,7 +71,6 @@ export const chores = {
   update: (id: number, data: Partial<NewChore>) => put<Chore>(`/chores/${id}`, data),
   complete: (id: number, periodId: string) =>
     post<{ completion: ChoreCompletion }>(`/chores/${id}/complete`, { periodId }),
-  uncomplete: (id: number) => request<Chore>('DELETE', `/chores/${id}/complete`),
   progress: (userId: number) =>
     get<{
       total: number;
@@ -147,6 +148,26 @@ export const allowance = {
   banking: (userId: number) => get<BankingData>(`/allowance/${userId}/banking`),
 };
 
+export function createPinChoreHistoryApi(pin: string) {
+  const h = { 'x-pin': pin };
+  return {
+    getHistory: (userId: number, date: string) =>
+      request<ChoreHistoryDay>(
+        'GET',
+        `/chores/history?userId=${userId}&date=${date}`,
+        undefined,
+        h,
+      ),
+    toggle: (choreId: number, date: string, userId: number) =>
+      request<ChoreHistoryToggleResult>(
+        'POST',
+        `/chores/${choreId}/history/toggle`,
+        { date, userId },
+        h,
+      ),
+  };
+}
+
 export function createPinAllowanceApi(pin: string) {
   const h = { 'x-pin': pin };
   return {
@@ -164,8 +185,6 @@ export function createPinAllowanceApi(pin: string) {
         data,
         h,
       ),
-    payout: (userId: number) =>
-      request<AllowanceConfig>('POST', `/allowance/${userId}/payout`, {}, h),
     updateBalances: (
       userId: number,
       balances: { savings_balance?: number; tithe_balance?: number; checking_balance?: number },

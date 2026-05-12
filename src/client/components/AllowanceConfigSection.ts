@@ -7,7 +7,6 @@ interface AllowanceApi {
     userId: number,
     data: AllowanceSavePayload,
   ) => Promise<{ config: AllowanceConfig; tiers: AllowanceTier[] }>;
-  payout: (userId: number) => Promise<AllowanceConfig>;
 }
 
 export function createAllowanceConfigSection(
