@@ -132,6 +132,34 @@ export function sumWeeklyEarnings(
   return roundToQuarter(row.total);
 }
 
+export function getStoredDailyEarning(db: Database.Database, userId: number, date: string): number {
+  const row = db
+    .prepare(
+      'SELECT COALESCE(amount_earned, 0) as amount FROM allowance_daily_earnings WHERE user_id = ? AND date = ?',
+    )
+    .get(userId, date) as { amount: number } | undefined;
+  return row ? row.amount : 0;
+}
+
+export function recalculateDailyEarnings(
+  db: Database.Database,
+  userId: number,
+  date: string,
+  totalChores: number,
+  completedCount: number,
+): number {
+  const config = getAllowanceConfig(db, userId);
+  if (!config || totalChores === 0) {
+    recordDailyEarning(db, userId, date, 0);
+    return 0;
+  }
+  const percent = Math.round((completedCount / totalChores) * 100);
+  const tiers = getTiers(db, config.id);
+  const earned = roundToQuarter((config.amount / 7) * getPayoutFraction(tiers, percent));
+  recordDailyEarning(db, userId, date, earned);
+  return earned;
+}
+
 export function updateBalances(
   db: Database.Database,
   userId: number,

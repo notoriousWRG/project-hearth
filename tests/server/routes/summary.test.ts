@@ -113,6 +113,39 @@ describe('GET /api/summary', () => {
     expect(res.body.reminders[0].title).toBe('Today task');
   });
 
+  it('excludes weekly chores not scheduled for today from total count', async () => {
+    const userRes = await request(app)
+      .post('/api/users')
+      .send({ name: 'Kraft', type: 'child', icon: '⭐', display_order: 1 });
+    const child = userRes.body;
+
+    // Daily chore — always visible
+    await request(app).post('/api/chores').send({
+      user_id: child.id,
+      title: 'Feed chickens',
+      icon: '🐔',
+      is_recurring: true,
+      recurrence_rule: 'daily',
+    });
+
+    // Weekly chore scheduled for every day EXCEPT today — should not count
+    const todayDow = new Date().getDay();
+    const otherDays = [0, 1, 2, 3, 4, 5, 6].filter((d) => d !== todayDow);
+    await request(app).post('/api/chores').send({
+      user_id: child.id,
+      title: 'Not today chore',
+      icon: '🚫',
+      is_recurring: true,
+      recurrence_rule: 'weekly',
+      recurrence_days: otherDays,
+    });
+
+    const res = await request(app).get('/api/summary');
+    const summary = res.body.children[0];
+    expect(summary.total).toBe(1);
+    expect(summary.completed).toBe(0);
+  });
+
   it('returns static affirmation', async () => {
     const res = await request(app).get('/api/summary');
     expect(res.body.affirmation).toBe("Green's are good to people");

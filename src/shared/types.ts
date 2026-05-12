@@ -143,6 +143,26 @@ export type NewMeal = Pick<Meal, 'name'>;
 export type NewMealIngredient = Omit<MealIngredient, 'id' | 'meal_id'>;
 export type NewInventoryItem = Omit<InventoryItem, 'id'>;
 
+export interface ChoreHistoryEntry {
+  choreId: number;
+  title: string;
+  icon: string;
+  completed: boolean;
+  isBonus: boolean;
+  bonusAmount: number | null;
+}
+
+export interface ChoreHistoryDay {
+  date: string;
+  chores: ChoreHistoryEntry[];
+  earned: number;
+}
+
+export interface ChoreHistoryToggleResult {
+  completed: boolean;
+  earned: number;
+}
+
 export interface QuickActionChore {
   id: number;
   title: string;

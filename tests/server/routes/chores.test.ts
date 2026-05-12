@@ -5,7 +5,13 @@ import type { Express } from 'express';
 import { createDb } from '../../../src/server/db/connection.js';
 import { runSchema, runMigrations } from '../../../src/server/db/schema.js';
 import { createApp } from '../../../src/server/app.js';
-import { setAllowanceConfig, setTier } from '../../../src/server/models/allowance.js';
+import {
+  setAllowanceConfig,
+  setTier,
+  recordDailyEarning,
+} from '../../../src/server/models/allowance.js';
+import { addCompletionForDate } from '../../../src/server/models/chores.js';
+import { setSetting } from '../../../src/server/models/settings.js';
 
 let db: Database.Database;
 let app: Express;
@@ -301,5 +307,157 @@ describe('weekly chore filtering', () => {
     expect(res.status).toBe(201);
     expect(res.body.recurrence_days).toEqual([0, 6]);
     expect(res.body.recurrence_rule).toBe('weekly');
+  });
+});
+
+const PIN = '1234';
+
+describe('GET /api/chores/history (pin-protected)', () => {
+  const FIXED_NOW = new Date('2026-05-12T10:00:00Z');
+
+  beforeEach(() => {
+    setSetting(db, 'pin', PIN);
+    vi.useFakeTimers();
+    vi.setSystemTime(FIXED_NOW);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('returns 401 without a PIN', async () => {
+    const res = await request(app).get(`/api/chores/history?userId=${userId}&date=2026-05-12`);
+    expect(res.status).toBe(401);
+  });
+
+  it('returns 400 when userId is missing', async () => {
+    const res = await request(app).get('/api/chores/history?date=2026-05-12').set('x-pin', PIN);
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 400 for a date more than 7 days ago', async () => {
+    const res = await request(app)
+      .get(`/api/chores/history?userId=${userId}&date=2026-05-04`)
+      .set('x-pin', PIN);
+    expect(res.status).toBe(400);
+  });
+
+  it('returns history for today with chores and earned=0 (no config)', async () => {
+    await request(app).post('/api/chores').send({ user_id: userId, title: 'Dishes', icon: '🍽️' });
+    const res = await request(app)
+      .get(`/api/chores/history?userId=${userId}&date=2026-05-12`)
+      .set('x-pin', PIN);
+    expect(res.status).toBe(200);
+    expect(res.body.chores).toHaveLength(1);
+    expect(res.body.chores[0].completed).toBe(false);
+    expect(res.body.earned).toBe(0);
+  });
+
+  it('returns completion status from chore_completions for a past day', async () => {
+    const created = await request(app)
+      .post('/api/chores')
+      .send({ user_id: userId, title: 'Dishes', icon: '🍽️' });
+    addCompletionForDate(db, created.body.id, '2026-05-11');
+    const res = await request(app)
+      .get(`/api/chores/history?userId=${userId}&date=2026-05-11`)
+      .set('x-pin', PIN);
+    expect(res.status).toBe(200);
+    expect(res.body.chores[0].completed).toBe(true);
+  });
+
+  it('returns stored earned for a past day', async () => {
+    await request(app).post('/api/chores').send({ user_id: userId, title: 'Dishes' });
+    recordDailyEarning(db, userId, '2026-05-11', 1.25);
+    const res = await request(app)
+      .get(`/api/chores/history?userId=${userId}&date=2026-05-11`)
+      .set('x-pin', PIN);
+    expect(res.body.earned).toBe(1.25);
+  });
+});
+
+describe('POST /api/chores/:id/history/toggle (pin-protected)', () => {
+  const FIXED_NOW = new Date('2026-05-12T10:00:00Z');
+
+  beforeEach(() => {
+    setSetting(db, 'pin', PIN);
+    vi.useFakeTimers();
+    vi.setSystemTime(FIXED_NOW);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('returns 401 without a PIN', async () => {
+    const created = await request(app).post('/api/chores').send({ user_id: userId, title: 'A' });
+    const res = await request(app)
+      .post(`/api/chores/${created.body.id}/history/toggle`)
+      .send({ date: '2026-05-11', userId });
+    expect(res.status).toBe(401);
+  });
+
+  it('returns 400 for a date outside the 7-day window', async () => {
+    const created = await request(app).post('/api/chores').send({ user_id: userId, title: 'A' });
+    const res = await request(app)
+      .post(`/api/chores/${created.body.id}/history/toggle`)
+      .set('x-pin', PIN)
+      .send({ date: '2026-05-04', userId });
+    expect(res.status).toBe(400);
+  });
+
+  it('returns 404 for an unknown chore', async () => {
+    const res = await request(app)
+      .post('/api/chores/999/history/toggle')
+      .set('x-pin', PIN)
+      .send({ date: '2026-05-11', userId });
+    expect(res.status).toBe(404);
+  });
+
+  it('marks a past-day chore as completed', async () => {
+    const created = await request(app).post('/api/chores').send({ user_id: userId, title: 'A' });
+    const res = await request(app)
+      .post(`/api/chores/${created.body.id}/history/toggle`)
+      .set('x-pin', PIN)
+      .send({ date: '2026-05-11', userId });
+    expect(res.status).toBe(200);
+    expect(res.body.completed).toBe(true);
+  });
+
+  it('unmarks a past-day chore that was already completed', async () => {
+    const created = await request(app).post('/api/chores').send({ user_id: userId, title: 'A' });
+    addCompletionForDate(db, created.body.id, '2026-05-11');
+    const res = await request(app)
+      .post(`/api/chores/${created.body.id}/history/toggle`)
+      .set('x-pin', PIN)
+      .send({ date: '2026-05-11', userId });
+    expect(res.status).toBe(200);
+    expect(res.body.completed).toBe(false);
+  });
+
+  it('recalculates earned for a past day with allowance config', async () => {
+    const config = setAllowanceConfig(db, userId, {
+      amount: 7,
+      streak_threshold: 5,
+      reset_day: 0,
+      period_start: '2026-05-10',
+    });
+    setTier(db, config.id, 100, 100);
+    const created = await request(app).post('/api/chores').send({ user_id: userId, title: 'A' });
+    const res = await request(app)
+      .post(`/api/chores/${created.body.id}/history/toggle`)
+      .set('x-pin', PIN)
+      .send({ date: '2026-05-11', userId });
+    expect(res.body.earned).toBe(1); // $7/week ÷ 7 days × 100% = $1
+  });
+
+  it('toggles today and returns earned=0', async () => {
+    const created = await request(app).post('/api/chores').send({ user_id: userId, title: 'A' });
+    const res = await request(app)
+      .post(`/api/chores/${created.body.id}/history/toggle`)
+      .set('x-pin', PIN)
+      .send({ date: '2026-05-12', userId });
+    expect(res.status).toBe(200);
+    expect(res.body.completed).toBe(true);
+    expect(res.body.earned).toBe(0);
   });
 });

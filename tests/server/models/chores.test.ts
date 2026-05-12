@@ -14,6 +14,9 @@ import {
   getCompletionsByPeriod,
   reorderChores,
   resetRecurringChore,
+  hasCompletionOnDate,
+  addCompletionForDate,
+  removeCompletionForDate,
 } from '../../../src/server/models/chores.js';
 
 let db: Database.Database;
@@ -281,5 +284,66 @@ describe('chores model', () => {
     reorderChores(db, userId, [b.id, a.id]);
     expect(getChoreById(db, b.id)?.position).toBe(0);
     expect(getChoreById(db, a.id)?.position).toBe(1);
+  });
+});
+
+describe('chore history model functions', () => {
+  let choreId: number;
+
+  beforeEach(() => {
+    choreId = createChore(db, {
+      user_id: userId,
+      title: 'Dishes',
+      icon: '🍽️',
+      completed: false,
+      is_recurring: true,
+      recurrence_rule: 'daily',
+      recurrence_days: null,
+      is_bonus: false,
+      bonus_amount: null,
+      position: 0,
+    }).id;
+  });
+
+  it('hasCompletionOnDate returns false when no completion exists', () => {
+    expect(hasCompletionOnDate(db, choreId, '2026-05-10')).toBe(false);
+  });
+
+  it('addCompletionForDate creates a row in chore_completions', () => {
+    addCompletionForDate(db, choreId, '2026-05-10');
+    expect(hasCompletionOnDate(db, choreId, '2026-05-10')).toBe(true);
+  });
+
+  it('addCompletionForDate does not affect other dates', () => {
+    addCompletionForDate(db, choreId, '2026-05-10');
+    expect(hasCompletionOnDate(db, choreId, '2026-05-09')).toBe(false);
+    expect(hasCompletionOnDate(db, choreId, '2026-05-11')).toBe(false);
+  });
+
+  it('removeCompletionForDate deletes the row', () => {
+    addCompletionForDate(db, choreId, '2026-05-10');
+    removeCompletionForDate(db, choreId, '2026-05-10');
+    expect(hasCompletionOnDate(db, choreId, '2026-05-10')).toBe(false);
+  });
+
+  it('removeCompletionForDate is a no-op when no row exists', () => {
+    expect(() => removeCompletionForDate(db, choreId, '2026-05-10')).not.toThrow();
+  });
+
+  it('hasCompletionOnDate is independent per chore', () => {
+    const c2 = createChore(db, {
+      user_id: userId,
+      title: 'Sweep',
+      icon: '🧹',
+      completed: false,
+      is_recurring: true,
+      recurrence_rule: 'daily',
+      recurrence_days: null,
+      is_bonus: false,
+      bonus_amount: null,
+      position: 1,
+    });
+    addCompletionForDate(db, choreId, '2026-05-10');
+    expect(hasCompletionOnDate(db, c2.id, '2026-05-10')).toBe(false);
   });
 });
