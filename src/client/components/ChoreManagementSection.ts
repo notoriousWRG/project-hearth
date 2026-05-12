@@ -6,7 +6,6 @@ interface ChoreManageApi {
   update: (id: number, data: Partial<Chore>) => Promise<Chore>;
   remove: (id: number) => Promise<void>;
   reorder: (userId: number, ids: number[]) => Promise<Chore[]>;
-  uncomplete: (id: number) => Promise<Chore>;
 }
 
 function isActiveToday(chore: Chore): boolean {
@@ -184,17 +183,6 @@ export function createChoreManagementSection(
     controls.appendChild(iconInput);
     controls.appendChild(titleInput);
     controls.appendChild(freqSelect);
-
-    if (active && chore.completed) {
-      const undoBtn = document.createElement('button');
-      undoBtn.type = 'button';
-      undoBtn.dataset.action = 'uncomplete';
-      undoBtn.textContent = '✓ Undo';
-      undoBtn.addEventListener('click', () => {
-        void api.uncomplete(chore.id).then(() => loadChores());
-      });
-      controls.appendChild(undoBtn);
-    }
 
     controls.appendChild(upBtn);
     controls.appendChild(downBtn);

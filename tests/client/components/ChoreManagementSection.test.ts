@@ -33,7 +33,6 @@ function makeChoreApi(chores: Chore[] = []) {
     update: vi.fn(async (id: number, data: Partial<Chore>) => makeChore({ id, ...data })),
     remove: vi.fn(async () => undefined),
     reorder: vi.fn(async () => chores),
-    uncomplete: vi.fn(async (id: number) => makeChore({ id, completed: false })),
   };
 }
 
@@ -114,26 +113,6 @@ describe('createChoreManagementSection', () => {
 
     await vi.waitFor(() => {
       expect(api.remove).toHaveBeenCalledWith(5);
-    });
-  });
-
-  it('completed chore shows an undo button', async () => {
-    const api = makeChoreApi([makeChore({ id: 5, completed: true })]);
-    const el = createChoreManagementSection(children, api);
-    container.appendChild(el);
-    await vi.waitFor(() => expect(el.querySelector('[data-action="uncomplete"]')).toBeTruthy());
-  });
-
-  it('undo button calls api.uncomplete with the chore id', async () => {
-    const api = makeChoreApi([makeChore({ id: 5, completed: true })]);
-    const el = createChoreManagementSection(children, api);
-    container.appendChild(el);
-    await vi.waitFor(() => expect(el.querySelector('[data-action="uncomplete"]')).toBeTruthy());
-
-    (el.querySelector('[data-action="uncomplete"]') as HTMLButtonElement).click();
-
-    await vi.waitFor(() => {
-      expect(api.uncomplete).toHaveBeenCalledWith(5);
     });
   });
 
@@ -237,24 +216,6 @@ describe('createChoreManagementSection', () => {
         'Not scheduled today',
       );
     });
-  });
-
-  it('inactive chore row does not have an undo button even when completed', async () => {
-    const todayDow = new Date().getDay();
-    const offDay = todayDow === 1 ? 2 : 1;
-    const api = makeChoreApi([
-      makeChore({
-        id: 2,
-        title: 'Off-day completed',
-        completed: true,
-        recurrence_rule: 'weekly',
-        recurrence_days: [offDay as 0 | 1 | 2 | 3 | 4 | 5 | 6],
-      }),
-    ]);
-    const el = createChoreManagementSection(children, api);
-    container.appendChild(el);
-    await vi.waitFor(() => expect(el.querySelector('.chore-row--inactive')).toBeTruthy());
-    expect(el.querySelector('[data-action="uncomplete"]')).toBeNull();
   });
 
   it('add form has a frequency selector defaulting to daily', async () => {

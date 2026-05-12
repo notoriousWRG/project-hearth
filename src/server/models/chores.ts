@@ -169,6 +169,31 @@ export function getCompletionsByPeriod(
   return rows.map(mapCompletion);
 }
 
+export function hasCompletionOnDate(db: Database.Database, choreId: number, date: string): boolean {
+  const row = db
+    .prepare('SELECT 1 FROM chore_completions WHERE chore_id = ? AND period_id = ?')
+    .get(choreId, date);
+  return row !== undefined;
+}
+
+export function addCompletionForDate(db: Database.Database, choreId: number, date: string): void {
+  const completedAt = new Date(date + 'T12:00:00').toISOString();
+  db.prepare(
+    'INSERT INTO chore_completions (chore_id, completed_at, period_id) VALUES (?, ?, ?)',
+  ).run(choreId, completedAt, date);
+}
+
+export function removeCompletionForDate(
+  db: Database.Database,
+  choreId: number,
+  date: string,
+): void {
+  db.prepare('DELETE FROM chore_completions WHERE chore_id = ? AND period_id = ?').run(
+    choreId,
+    date,
+  );
+}
+
 export function reorderChores(db: Database.Database, userId: number, orderedIds: number[]): void {
   const update = db.prepare('UPDATE chores SET position = ? WHERE id = ? AND user_id = ?');
   const tx = db.transaction(() => {

@@ -115,6 +115,26 @@ export type NewMealPlanEntry = Omit<MealPlanEntry, 'id'>;
 export type NewGroceryItem = Omit<GroceryItem, 'id'>;
 export type NewReminder = Omit<Reminder, 'id' | 'created_at' | 'dismissed'>;
 
+export interface ChoreHistoryEntry {
+  choreId: number;
+  title: string;
+  icon: string;
+  completed: boolean;
+  isBonus: boolean;
+  bonusAmount: number | null;
+}
+
+export interface ChoreHistoryDay {
+  date: string;
+  chores: ChoreHistoryEntry[];
+  earned: number;
+}
+
+export interface ChoreHistoryToggleResult {
+  completed: boolean;
+  earned: number;
+}
+
 export interface QuickActionChore {
   id: number;
   title: string;

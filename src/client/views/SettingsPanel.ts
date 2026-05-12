@@ -2,28 +2,34 @@ import type { User } from '../../shared/types.js';
 import { createChoreManagementSection } from '../components/ChoreManagementSection.js';
 import { createAllowanceConfigSection } from '../components/AllowanceConfigSection.js';
 import { createUserManagementSection } from '../components/UserManagementSection.js';
+import { createChoreHistorySection } from '../components/ChoreHistorySection.js';
 import { applyTheme, THEMES, type Theme } from '../utils/theme.js';
-import { createPinSettingsApi, createPinAllowanceApi, createPinStreaksApi } from '../utils/api.js';
+import {
+  createPinSettingsApi,
+  createPinAllowanceApi,
+  createPinStreaksApi,
+  createPinChoreHistoryApi,
+} from '../utils/api.js';
 import * as api from '../utils/api.js';
 
 type SettingsTab =
   | 'users'
   | 'chores'
+  | 'history'
   | 'allowance'
   | 'balances'
   | 'theme'
   | 'pin'
-  | 'payout'
   | 'reset-time';
 
 const TAB_LABELS: Record<SettingsTab, string> = {
   users: 'Users',
   chores: 'Chores',
+  history: 'History',
   allowance: 'Allowance',
   balances: 'Balances',
   theme: 'Theme',
   pin: 'PIN',
-  payout: 'Payout',
   'reset-time': 'Reset Time',
 };
 
@@ -39,6 +45,7 @@ export function createSettingsPanel(
   const pinSettingsApi = createPinSettingsApi(pin);
   const pinAllowanceApi = createPinAllowanceApi(pin);
   const pinStreaksApi = createPinStreaksApi(pin);
+  const pinChoreHistoryApi = createPinChoreHistoryApi(pin);
 
   const view = document.createElement('div');
   view.className = 'settings-panel';
@@ -85,6 +92,8 @@ export function createSettingsPanel(
       content.appendChild(createUserManagementSection(api.users));
     } else if (activeTab === 'chores') {
       content.appendChild(createChoreManagementSection(childUsers, api.chores, pinStreaksApi));
+    } else if (activeTab === 'history') {
+      content.appendChild(createChoreHistorySection(childUsers, pinChoreHistoryApi));
     } else if (activeTab === 'allowance') {
       content.appendChild(createAllowanceConfigSection(childUsers, pinAllowanceApi));
     } else if (activeTab === 'balances') {
@@ -93,8 +102,6 @@ export function createSettingsPanel(
       content.appendChild(createThemeSection());
     } else if (activeTab === 'pin') {
       content.appendChild(createPinSection(pinSettingsApi));
-    } else if (activeTab === 'payout') {
-      content.appendChild(createPayoutSection(childUsers, pinAllowanceApi));
     } else {
       content.appendChild(createResetTimeSection(pinSettingsApi));
     }
@@ -225,60 +232,6 @@ function createPinSection(pinSettingsApi: ReturnType<typeof createPinSettingsApi
   });
 
   section.appendChild(form);
-  return section;
-}
-
-// ─── Payout section ───────────────────────────────────────────────────────────
-
-function createPayoutSection(
-  childUsers: User[],
-  pinAllowanceApi: ReturnType<typeof createPinAllowanceApi>,
-): HTMLElement {
-  const section = document.createElement('section');
-  section.className = 'settings-section';
-
-  const heading = document.createElement('h2');
-  heading.textContent = 'Mark as Paid';
-  section.appendChild(heading);
-
-  const desc = document.createElement('p');
-  desc.textContent = 'Mark the current allowance period as paid for a child.';
-  section.appendChild(desc);
-
-  for (const child of childUsers) {
-    const row = document.createElement('div');
-    row.className = 'payout-row';
-
-    const nameSpan = document.createElement('span');
-    nameSpan.textContent = `${child.icon || '⭐'} ${child.name}`;
-
-    const msg = document.createElement('span');
-    msg.className = 'payout-row__msg';
-    msg.hidden = true;
-    msg.textContent = 'Paid!';
-
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.dataset.action = 'payout';
-    btn.dataset.childId = String(child.id);
-    btn.textContent = 'Mark as Paid';
-    btn.addEventListener('click', () => {
-      btn.disabled = true;
-      void pinAllowanceApi.payout(child.id).then(() => {
-        btn.disabled = false;
-        msg.hidden = false;
-        setTimeout(() => {
-          msg.hidden = true;
-        }, 3000);
-      });
-    });
-
-    row.appendChild(nameSpan);
-    row.appendChild(btn);
-    row.appendChild(msg);
-    section.appendChild(row);
-  }
-
   return section;
 }
 

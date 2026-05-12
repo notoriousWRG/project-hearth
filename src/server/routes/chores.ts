@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import type Database from 'better-sqlite3';
-import type { Chore } from '../../shared/types.js';
+import type { Chore, ChoreHistoryEntry } from '../../shared/types.js';
 import {
   getChoresByUser,
   getChoreById,
@@ -12,6 +12,9 @@ import {
   getRecurringChores,
   resetRecurringChore,
   reorderChores,
+  hasCompletionOnDate,
+  addCompletionForDate,
+  removeCompletionForDate,
 } from '../models/chores.js';
 import {
   getAllowanceConfig,
@@ -22,17 +25,35 @@ import {
   recordDailyEarning,
   sumWeeklyEarnings,
   updateBalances,
+  getStoredDailyEarning,
+  recalculateDailyEarnings,
 } from '../models/allowance.js';
 import { evaluateStreakAtReset } from '../models/streaks.js';
 import { getSetting, setSetting } from '../models/settings.js';
 import { shouldReset, getCurrentResetDate } from '../utils/reset.js';
 import { getAllUsers } from '../models/users.js';
+import { requirePin } from '../middleware/pin.js';
 
 function filterChoresForToday(chores: Chore[], dayOfWeek: number): Chore[] {
   return chores.filter((c) => {
     if (c.recurrence_rule !== 'weekly') return true;
     return c.recurrence_days?.includes(dayOfWeek as 0 | 1 | 2 | 3 | 4 | 5 | 6) ?? false;
   });
+}
+
+function getSundayOfWeek(date: Date): string {
+  const d = new Date(date);
+  d.setDate(d.getDate() - d.getDay());
+  return d.toISOString().slice(0, 10);
+}
+
+function isDateWithinLastNDays(date: string, n: number): boolean {
+  const target = new Date(date + 'T12:00:00');
+  const now = new Date();
+  const today = new Date(now.toISOString().slice(0, 10) + 'T12:00:00');
+  const oldest = new Date(today);
+  oldest.setDate(oldest.getDate() - (n - 1));
+  return target >= oldest && target <= today;
 }
 
 function applyRecurringReset(db: Database.Database): void {
@@ -225,6 +246,125 @@ export function createChoresRouter(db: Database.Database): Router {
     reorderChores(db, userId, ids);
     // Return all chores unfiltered for the settings UI reorder response
     res.json(getChoresByUser(db, userId));
+  });
+
+  router.get('/history', requirePin(db), (req, res) => {
+    const userId = Number(req.query.userId);
+    const date = String(req.query.date ?? '');
+    if (!userId || !date) {
+      res.status(400).json({ error: 'userId and date query params required' });
+      return;
+    }
+    if (!isDateWithinLastNDays(date, 7)) {
+      res.status(400).json({ error: 'date must be within the last 7 days' });
+      return;
+    }
+    const dow = new Date(date + 'T12:00:00').getDay();
+    const allChores = getChoresByUser(db, userId);
+    const applicableChores = filterChoresForToday(allChores, dow);
+    const today = new Date().toISOString().slice(0, 10);
+
+    const chores: ChoreHistoryEntry[] = applicableChores.map((c) => ({
+      choreId: c.id,
+      title: c.title,
+      icon: c.icon,
+      completed: date === today ? c.completed : hasCompletionOnDate(db, c.id, date),
+      isBonus: c.is_bonus,
+      bonusAmount: c.bonus_amount,
+    }));
+
+    let earned: number;
+    if (date === today) {
+      const config = getAllowanceConfig(db, userId);
+      if (config) {
+        const total = applicableChores.length;
+        const completed = applicableChores.filter((c) => c.completed).length;
+        const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+        const tiers = getTiers(db, config.id);
+        earned = roundToQuarter((config.amount / 7) * getPayoutFraction(tiers, percent));
+      } else {
+        earned = 0;
+      }
+    } else {
+      earned = getStoredDailyEarning(db, userId, date);
+    }
+
+    res.json({ date, chores, earned });
+  });
+
+  router.post('/:id/history/toggle', requirePin(db), (req, res) => {
+    const choreId = Number(req.params.id);
+    const { date, userId } = req.body as { date?: string; userId?: number };
+    if (!date || !userId) {
+      res.status(400).json({ error: 'date and userId required' });
+      return;
+    }
+    if (!isDateWithinLastNDays(date, 7)) {
+      res.status(400).json({ error: 'date must be within the last 7 days' });
+      return;
+    }
+    const chore = getChoreById(db, choreId);
+    if (!chore) {
+      res.status(404).json({ error: 'Chore not found' });
+      return;
+    }
+    const today = new Date().toISOString().slice(0, 10);
+    const alreadyCompleted =
+      date === today ? chore.completed : hasCompletionOnDate(db, choreId, date);
+    const nowCompleted = !alreadyCompleted;
+
+    if (nowCompleted) {
+      addCompletionForDate(db, choreId, date);
+    } else {
+      removeCompletionForDate(db, choreId, date);
+    }
+
+    if (date === today) {
+      const ts = nowCompleted ? new Date().toISOString() : null;
+      db.prepare('UPDATE chores SET completed = ?, completed_at = ? WHERE id = ?').run(
+        nowCompleted ? 1 : 0,
+        ts,
+        choreId,
+      );
+      res.json({ completed: nowCompleted, earned: 0 });
+      return;
+    }
+
+    const dow = new Date(date + 'T12:00:00').getDay();
+    const allChores = getChoresByUser(db, userId);
+    const applicableChores = filterChoresForToday(allChores, dow);
+    const completedCount = applicableChores.filter((c) =>
+      hasCompletionOnDate(db, c.id, date),
+    ).length;
+
+    const oldEarned = getStoredDailyEarning(db, userId, date);
+    const newEarned = recalculateDailyEarnings(
+      db,
+      userId,
+      date,
+      applicableChores.length,
+      completedCount,
+    );
+
+    const currentSunday = getSundayOfWeek(new Date());
+    if (date < currentSunday) {
+      const delta = newEarned - oldEarned;
+      if (delta !== 0) {
+        const config = getAllowanceConfig(db, userId);
+        if (config) {
+          const tithe = roundToQuarter(delta / 7);
+          const savings = roundToQuarter(delta / 7);
+          const checking = delta - tithe - savings;
+          updateBalances(db, userId, {
+            savings_balance: config.savings_balance + savings,
+            tithe_balance: config.tithe_balance + tithe,
+            checking_balance: config.checking_balance + checking,
+          });
+        }
+      }
+    }
+
+    res.json({ completed: nowCompleted, earned: newEarned });
   });
 
   router.get('/:id', (req, res) => {
