@@ -11,6 +11,8 @@ import { createSettingsRouter } from './routes/settings.js';
 import { createStreaksRouter } from './routes/streaks.js';
 import { createAllowanceRouter } from './routes/allowance.js';
 import { createSummaryRouter } from './routes/summary.js';
+import { createSavedMealsRouter } from './routes/savedMeals.js';
+import { createInventoryRouter } from './routes/inventory.js';
 
 export function createApp(db: Database.Database): Express {
   const app = express();
@@ -26,6 +28,8 @@ export function createApp(db: Database.Database): Express {
   app.use('/api/streaks', createStreaksRouter(db));
   app.use('/api/allowance', createAllowanceRouter(db));
   app.use('/api/summary', createSummaryRouter(db));
+  app.use('/api/meals', createSavedMealsRouter(db));
+  app.use('/api/inventory', createInventoryRouter(db));
 
   return app;
 }

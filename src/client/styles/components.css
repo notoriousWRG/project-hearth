@@ -1775,6 +1775,29 @@
   gap: var(--space-sm);
 }
 
+/* ─── Saved Meals section ────────────────────────────────────────────────────── */
+
+.saved-meal-create {
+  display: flex;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.saved-meal-create input {
+  flex: 1;
+}
+
+.saved-meals-empty {
+  color: var(--color-muted);
+  font-style: italic;
+}
+
+.saved-meal-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
 /* Earned summary card */
 .chore-history-earned {
   display: flex;
@@ -1917,4 +1940,273 @@
   color: var(--color-muted);
   font-style: italic;
   padding: var(--space-sm) 0;
+}
+
+.saved-meal-row {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.saved-meal-row__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-surface);
+}
+
+.saved-meal-row__name {
+  font-weight: 500;
+}
+
+.saved-meal-row__editor {
+  display: none;
+  padding: var(--space-md);
+  border-top: 1px solid var(--color-border);
+  background: var(--color-bg);
+}
+
+.saved-meal-row--expanded .saved-meal-row__editor {
+  display: block;
+}
+
+.editor-name-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.editor-name-row input {
+  flex: 1;
+}
+
+.ingredient-list {
+  margin-bottom: var(--space-sm);
+}
+
+.ingredient-row {
+  display: flex;
+  gap: var(--space-xs);
+  align-items: center;
+  margin-bottom: var(--space-xs);
+}
+
+.ingredient-row__name {
+  flex: 1;
+}
+
+.ingredient-row__category {
+  width: 8rem;
+}
+
+.ingredient-row__reorder {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.ingredient-row__reorder button {
+  padding: 0 var(--space-xs);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.saved-meal-add-ingredient {
+  margin-top: var(--space-xs);
+  font-size: 0.875rem;
+}
+
+.saved-meal-actions {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.saved-meal-delete {
+  margin-left: auto;
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+/* ─── Inventory section ──────────────────────────────────────── */
+
+.inventory-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.inventory-location-tab:hover {
+  color: var(--color-text);
+}
+
+.inventory-location-tab--active {
+  border-bottom-color: var(--color-accent);
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+.inventory-add-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+.inventory-add-form input[type='text'],
+.inventory-add-form select {
+  font-size: 0.875rem;
+}
+
+.inventory-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.inventory-category {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.inventory-category__title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--color-muted);
+  margin-bottom: var(--space-xs);
+}
+
+.inventory-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xs) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.inventory-item__name {
+  flex: 1;
+  font-size: 0.9375rem;
+}
+
+.inventory-item__notes {
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+  font-style: italic;
+}
+
+.inventory-empty {
+  color: var(--color-muted);
+  font-style: italic;
+  text-align: center;
+  padding: var(--space-lg) 0;
+}
+
+/* ─── Meal slot picker ───────────────────────────────────────── */
+
+.meal-slot__picker-btn {
+  font-size: 0.7rem;
+  color: var(--color-muted);
+  background: transparent;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.15rem 0.4rem;
+  cursor: pointer;
+  margin-top: 0.2rem;
+  width: 100%;
+  transition:
+    color var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.meal-slot__picker-btn:hover {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.meal-slot__saved-meal-picker {
+  font-size: 0.8125rem;
+  font-family: var(--font-body);
+  background: var(--color-bg);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  margin-top: 0.2rem;
+  width: 100%;
+}
+
+/* ─── Grocery view tabs ──────────────────────────────────────── */
+
+.grocery-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.grocery-view__tabs {
+  display: flex;
+  gap: var(--space-xs);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--space-xs);
+}
+
+.grocery-tab {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--color-muted);
+  cursor: pointer;
+  font-size: 0.9375rem;
+  font-family: var(--font-body);
+  padding: var(--space-xs) var(--space-sm);
+  transition:
+    color var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.grocery-tab:hover {
+  color: var(--color-text);
+}
+
+.grocery-tab--active {
+  color: var(--color-accent);
+  border-bottom-color: var(--color-accent);
+}
+
+.grocery-view__content {
+  flex: 1;
+}
+
+/* ─── Move-to-inventory actions ──────────────────────────────── */
+
+.grocery-item__move-actions {
+  display: flex;
+  gap: var(--space-xs);
+  margin-left: auto;
+}
+
+.grocery-item__move-actions button {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-muted);
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-family: var(--font-body);
+  padding: 0.15rem var(--space-xs);
+  transition:
+    color var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.grocery-item__move-actions button:hover {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
 }

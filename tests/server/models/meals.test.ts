@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import Database from 'better-sqlite3';
 import { createDb } from '../../../src/server/db/connection.js';
-import { runSchema } from '../../../src/server/db/schema.js';
+import { runSchema, runMigrations } from '../../../src/server/db/schema.js';
 import {
   getMealsByWeek,
   getMealById,
@@ -9,12 +9,14 @@ import {
   deleteMeal,
   clearWeek,
 } from '../../../src/server/models/meals.js';
+import { createMeal } from '../../../src/server/models/savedMeals.js';
 
 let db: Database.Database;
 
 beforeEach(() => {
   db = createDb(':memory:');
   runSchema(db);
+  runMigrations(db);
 });
 
 afterEach(() => {
@@ -26,6 +28,7 @@ const meal1 = {
   day_of_week: 1 as const,
   meal_type: 'dinner' as const,
   description: 'Pasta',
+  meal_id: null,
 };
 
 describe('meals model', () => {
@@ -86,9 +89,35 @@ describe('meals model', () => {
       day_of_week: 2,
       meal_type: 'lunch',
       description: 'Soup',
+      meal_id: null,
     });
     const count = clearWeek(db, '2026-04-27');
     expect(count).toBe(2);
     expect(getMealsByWeek(db, '2026-04-27')).toHaveLength(0);
+  });
+
+  it('upsertMeal without meal_id stores null', () => {
+    const entry = upsertMeal(db, meal1);
+    expect(entry.meal_id).toBeNull();
+  });
+
+  it('upsertMeal with meal_id stores and returns it', () => {
+    const saved = createMeal(db, { name: 'Pasta' });
+    const entry = upsertMeal(db, { ...meal1, meal_id: saved.id });
+    expect(entry.meal_id).toBe(saved.id);
+  });
+
+  it('getMealsByWeek includes meal_id on entries', () => {
+    const saved = createMeal(db, { name: 'Pasta' });
+    upsertMeal(db, { ...meal1, meal_id: saved.id });
+    const [fetched] = getMealsByWeek(db, '2026-04-27');
+    expect(fetched.meal_id).toBe(saved.id);
+  });
+
+  it('getMealById includes meal_id', () => {
+    const saved = createMeal(db, { name: 'Pasta' });
+    const entry = upsertMeal(db, { ...meal1, meal_id: saved.id });
+    const fetched = getMealById(db, entry.id);
+    expect(fetched?.meal_id).toBe(saved.id);
   });
 });

@@ -7,6 +7,7 @@ type RawMeal = {
   day_of_week: number;
   meal_type: string;
   description: string;
+  meal_id: number | null;
 };
 
 function mapMeal(row: RawMeal): MealPlanEntry {
@@ -16,6 +17,7 @@ function mapMeal(row: RawMeal): MealPlanEntry {
     day_of_week: row.day_of_week as MealPlanEntry['day_of_week'],
     meal_type: row.meal_type as MealPlanEntry['meal_type'],
     description: row.description,
+    meal_id: row.meal_id ?? null,
   };
 }
 
@@ -32,16 +34,21 @@ export function getMealById(db: Database.Database, id: number): MealPlanEntry | 
 }
 
 export function upsertMeal(db: Database.Database, data: NewMealPlanEntry): MealPlanEntry {
-  // Delete any existing entry for this slot, then insert fresh
   db.prepare(
     'DELETE FROM meal_plan WHERE week_start_date = ? AND day_of_week = ? AND meal_type = ?',
   ).run(data.week_start_date, data.day_of_week, data.meal_type);
   const row = db
     .prepare(
-      `INSERT INTO meal_plan (week_start_date, day_of_week, meal_type, description)
-       VALUES (?, ?, ?, ?) RETURNING *`,
+      `INSERT INTO meal_plan (week_start_date, day_of_week, meal_type, description, meal_id)
+       VALUES (?, ?, ?, ?, ?) RETURNING *`,
     )
-    .get(data.week_start_date, data.day_of_week, data.meal_type, data.description) as RawMeal;
+    .get(
+      data.week_start_date,
+      data.day_of_week,
+      data.meal_type,
+      data.description,
+      data.meal_id ?? null,
+    ) as RawMeal;
   return mapMeal(row);
 }
 

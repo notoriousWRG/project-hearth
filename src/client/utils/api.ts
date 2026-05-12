@@ -12,10 +12,15 @@ import type {
   AllowanceConfig,
   AllowanceTier,
   BankingData,
+  Meal,
+  NewMealIngredient,
   MealPlanEntry,
   NewMealPlanEntry,
   GroceryItem,
   NewGroceryItem,
+  InventoryItem,
+  NewInventoryItem,
+  InventoryLocation,
   Reminder,
   NewReminder,
   SummaryResponse,
@@ -103,6 +108,15 @@ export const meals = {
     post<GroceryItem[]>('/meal-plan/generate-grocery', { week: weekStartDate }),
 };
 
+export const savedMeals = {
+  list: () => get<Meal[]>('/meals'),
+  get: (id: number) => get<Meal>(`/meals/${id}`),
+  create: (data: { name: string }) => post<Meal>('/meals', data),
+  update: (id: number, data: { name: string; ingredients: NewMealIngredient[] }) =>
+    put<Meal>(`/meals/${id}`, data),
+  remove: (id: number) => del(`/meals/${id}`),
+};
+
 export const grocery = {
   list: () => get<GroceryItem[]>('/grocery'),
   create: (data: NewGroceryItem) => post<GroceryItem>('/grocery', data),
@@ -110,6 +124,16 @@ export const grocery = {
   check: (id: number, checked: boolean) => patch<GroceryItem>(`/grocery/${id}/check`, { checked }),
   remove: (id: number) => del(`/grocery/${id}`),
   clearChecked: () => post<{ deleted: number }>('/grocery/clear-checked', {}),
+  export: () => get<{ text: string }>('/grocery/export?format=text'),
+};
+
+export const inventory = {
+  list: (location?: InventoryLocation) =>
+    get<InventoryItem[]>(`/inventory${location ? `?location=${location}` : ''}`),
+  create: (data: NewInventoryItem) => post<InventoryItem>('/inventory', data),
+  update: (id: number, data: Partial<Pick<NewInventoryItem, 'category' | 'notes'>>) =>
+    put<InventoryItem>(`/inventory/${id}`, data),
+  remove: (id: number) => del(`/inventory/${id}`),
 };
 
 export const reminders = {

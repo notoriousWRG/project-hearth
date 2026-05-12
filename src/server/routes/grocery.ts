@@ -9,6 +9,7 @@ import {
   checkItem,
   clearCheckedItems,
 } from '../models/grocery.js';
+import { formatGroceryAsText } from '../services/exportGrocery.js';
 
 export function createGroceryRouter(db: Database.Database): Router {
   const router = Router();
@@ -73,6 +74,16 @@ export function createGroceryRouter(db: Database.Database): Router {
       return;
     }
     res.json(item);
+  });
+
+  // Must come before /:id to avoid 'export' being treated as an id
+  router.get('/export', (req, res) => {
+    if (req.query.format !== 'text') {
+      res.status(400).json({ error: 'Only format=text is supported' });
+      return;
+    }
+    const items = getAllGroceryItems(db);
+    res.json({ text: formatGroceryAsText(items) });
   });
 
   router.get('/:id', (req, res) => {

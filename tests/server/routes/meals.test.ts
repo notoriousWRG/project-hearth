@@ -85,41 +85,167 @@ describe('DELETE /api/meal-plan/:id', () => {
   });
 });
 
+describe('PUT /api/meal-plan — meal_id hydration', () => {
+  it('hydrates description from saved meal name when meal_id is provided', async () => {
+    const meal = await request(app).post('/api/meals').send({ name: 'Tacos' });
+    const res = await request(app).put('/api/meal-plan').send({
+      week_start_date: week,
+      day_of_week: 3,
+      meal_type: 'dinner',
+      meal_id: meal.body.id,
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.description).toBe('Tacos');
+    expect(res.body.meal_id).toBe(meal.body.id);
+  });
+
+  it('uses provided description when no meal_id given', async () => {
+    const res = await request(app).put('/api/meal-plan').send({
+      week_start_date: week,
+      day_of_week: 3,
+      meal_type: 'dinner',
+      description: 'Freetext dinner',
+    });
+    expect(res.status).toBe(200);
+    expect(res.body.description).toBe('Freetext dinner');
+    expect(res.body.meal_id).toBeNull();
+  });
+});
+
 describe('POST /api/meal-plan/generate-grocery', () => {
   it('returns 400 when week is missing', async () => {
     const res = await request(app).post('/api/meal-plan/generate-grocery').send({});
     expect(res.status).toBe(400);
   });
 
-  it('creates grocery items from meal descriptions', async () => {
-    await request(app)
-      .put('/api/meal-plan')
-      .send({ week_start_date: week, day_of_week: 1, meal_type: 'dinner', description: 'Pasta' });
-    await request(app)
-      .put('/api/meal-plan')
-      .send({ week_start_date: week, day_of_week: 2, meal_type: 'lunch', description: 'Soup' });
-
+  it('saved-meal plan: aggregates ingredients, one row per unique name', async () => {
+    const meal = await request(app)
+      .post('/api/meals')
+      .send({
+        name: 'Pasta',
+        ingredients: [
+          { name: 'pasta', category: 'pantry', position: 0 },
+          { name: 'tomato sauce', category: 'pantry', position: 1 },
+        ],
+      });
+    await request(app).put('/api/meal-plan').send({
+      week_start_date: week,
+      day_of_week: 1,
+      meal_type: 'dinner',
+      meal_id: meal.body.id,
+    });
     const res = await request(app).post('/api/meal-plan/generate-grocery').send({ week });
     expect(res.status).toBe(200);
     expect(res.body).toHaveLength(2);
     expect(res.body[0].source).toBe('meal_plan');
-    expect(res.body[0].meal_plan_id).toBeTypeOf('number');
+    expect(res.body[0].meal_plan_id).toBeNull();
   });
 
-  it('does not duplicate items on re-run', async () => {
+  it('skips ingredients already in pantry', async () => {
     await request(app)
-      .put('/api/meal-plan')
-      .send({ week_start_date: week, day_of_week: 1, meal_type: 'dinner', description: 'Pasta' });
-    await request(app).post('/api/meal-plan/generate-grocery').send({ week });
+      .post('/api/inventory')
+      .send({ name: 'pasta', category: 'pantry', location: 'pantry', notes: '' });
+    const meal = await request(app)
+      .post('/api/meals')
+      .send({
+        name: 'Pasta',
+        ingredients: [
+          { name: 'pasta', category: 'pantry', position: 0 },
+          { name: 'tomato sauce', category: 'pantry', position: 1 },
+        ],
+      });
+    await request(app).put('/api/meal-plan').send({
+      week_start_date: week,
+      day_of_week: 1,
+      meal_type: 'dinner',
+      meal_id: meal.body.id,
+    });
     const res = await request(app).post('/api/meal-plan/generate-grocery').send({ week });
-    expect(res.body).toHaveLength(0); // No new items — already generated
+    expect(res.body).toHaveLength(1);
+    expect(res.body[0].name).toBe('tomato sauce');
   });
 
-  it('skips meals with empty descriptions', async () => {
+  it('skips ingredients already in icebox', async () => {
     await request(app)
-      .put('/api/meal-plan')
-      .send({ week_start_date: week, day_of_week: 1, meal_type: 'dinner', description: '' });
+      .post('/api/inventory')
+      .send({ name: 'chicken', category: 'protein', location: 'icebox', notes: '' });
+    const meal = await request(app)
+      .post('/api/meals')
+      .send({
+        name: 'Chicken Rice',
+        ingredients: [
+          { name: 'chicken', category: 'protein', position: 0 },
+          { name: 'rice', category: 'pantry', position: 1 },
+        ],
+      });
+    await request(app).put('/api/meal-plan').send({
+      week_start_date: week,
+      day_of_week: 1,
+      meal_type: 'dinner',
+      meal_id: meal.body.id,
+    });
     const res = await request(app).post('/api/meal-plan/generate-grocery').send({ week });
+    expect(res.body).toHaveLength(1);
+    expect(res.body[0].name).toBe('rice');
+  });
+
+  it('deduplicates same ingredient appearing in two meals', async () => {
+    const meal1 = await request(app)
+      .post('/api/meals')
+      .send({
+        name: 'Pasta',
+        ingredients: [{ name: 'garlic', category: 'produce', position: 0 }],
+      });
+    const meal2 = await request(app)
+      .post('/api/meals')
+      .send({
+        name: 'Stir Fry',
+        ingredients: [{ name: 'garlic', category: 'produce', position: 0 }],
+      });
+    await request(app).put('/api/meal-plan').send({
+      week_start_date: week,
+      day_of_week: 1,
+      meal_type: 'dinner',
+      meal_id: meal1.body.id,
+    });
+    await request(app).put('/api/meal-plan').send({
+      week_start_date: week,
+      day_of_week: 2,
+      meal_type: 'dinner',
+      meal_id: meal2.body.id,
+    });
+    const res = await request(app).post('/api/meal-plan/generate-grocery').send({ week });
+    expect(res.body).toHaveLength(1);
+    expect(res.body[0].name).toBe('garlic');
+  });
+
+  it('does not add ingredient already on shopping list (unchecked)', async () => {
+    await request(app).post('/api/grocery').send({ name: 'onion', category: 'produce' });
+    const meal = await request(app)
+      .post('/api/meals')
+      .send({
+        name: 'Soup',
+        ingredients: [{ name: 'onion', category: 'produce', position: 0 }],
+      });
+    await request(app).put('/api/meal-plan').send({
+      week_start_date: week,
+      day_of_week: 1,
+      meal_type: 'lunch',
+      meal_id: meal.body.id,
+    });
+    const res = await request(app).post('/api/meal-plan/generate-grocery').send({ week });
+    expect(res.body).toHaveLength(0);
+  });
+
+  it('freetext-only entry (no meal_id) is skipped — meal names are not ingredients', async () => {
+    await request(app).put('/api/meal-plan').send({
+      week_start_date: week,
+      day_of_week: 1,
+      meal_type: 'dinner',
+      description: 'Leftovers',
+    });
+    const res = await request(app).post('/api/meal-plan/generate-grocery').send({ week });
+    expect(res.status).toBe(200);
     expect(res.body).toHaveLength(0);
   });
 });

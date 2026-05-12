@@ -2,6 +2,7 @@ import type { User } from '../../shared/types.js';
 import { createChoreManagementSection } from '../components/ChoreManagementSection.js';
 import { createAllowanceConfigSection } from '../components/AllowanceConfigSection.js';
 import { createUserManagementSection } from '../components/UserManagementSection.js';
+import { createSavedMealsSection } from '../components/SavedMealsSection.js';
 import { createChoreHistorySection } from '../components/ChoreHistorySection.js';
 import { applyTheme, THEMES, type Theme } from '../utils/theme.js';
 import {
@@ -18,6 +19,7 @@ type SettingsTab =
   | 'history'
   | 'allowance'
   | 'balances'
+  | 'meals'
   | 'theme'
   | 'pin'
   | 'reset-time';
@@ -28,6 +30,7 @@ const TAB_LABELS: Record<SettingsTab, string> = {
   history: 'History',
   allowance: 'Allowance',
   balances: 'Balances',
+  meals: 'Saved Meals',
   theme: 'Theme',
   pin: 'PIN',
   'reset-time': 'Reset Time',
@@ -98,6 +101,8 @@ export function createSettingsPanel(
       content.appendChild(createAllowanceConfigSection(childUsers, pinAllowanceApi));
     } else if (activeTab === 'balances') {
       content.appendChild(createBalancesSection(childUsers, pinAllowanceApi));
+    } else if (activeTab === 'meals') {
+      content.appendChild(createSavedMealsSection(api.savedMeals));
     } else if (activeTab === 'theme') {
       content.appendChild(createThemeSection());
     } else if (activeTab === 'pin') {
