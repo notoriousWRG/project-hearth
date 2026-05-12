@@ -1,4 +1,9 @@
-import type { GroceryItem, GroceryCategory, NewGroceryItem } from '../../shared/types.js';
+import type {
+  GroceryItem,
+  GroceryCategory,
+  NewGroceryItem,
+  InventoryLocation,
+} from '../../shared/types.js';
 import { createErrorBanner } from './ErrorBanner.js';
 
 interface GroceryApi {
@@ -38,7 +43,11 @@ function groupByCategory(items: GroceryItem[]): Map<GroceryCategory, GroceryItem
   return map;
 }
 
-export function createGroceryList(api: GroceryApi): HTMLElement {
+interface GroceryListOpts {
+  onMoveToInventory?: (item: GroceryItem, location: InventoryLocation) => Promise<void>;
+}
+
+export function createGroceryList(api: GroceryApi, opts: GroceryListOpts = {}): HTMLElement {
   const section = document.createElement('section');
   section.className = 'grocery-list';
 
@@ -58,26 +67,6 @@ export function createGroceryList(api: GroceryApi): HTMLElement {
   toolbar.appendChild(exportBtn);
 
   section.appendChild(toolbar);
-
-  // Export panel (hidden until export is clicked)
-  const exportPanel = document.createElement('div');
-  exportPanel.className = 'grocery-export-panel';
-  exportPanel.hidden = true;
-
-  const exportClose = document.createElement('button');
-  exportClose.type = 'button';
-  exportClose.dataset.action = 'close-export';
-  exportClose.textContent = '✕ Close';
-  exportClose.addEventListener('click', () => {
-    exportPanel.hidden = true;
-  });
-
-  const exportPre = document.createElement('pre');
-  exportPre.className = 'grocery-export-panel__text';
-
-  exportPanel.appendChild(exportClose);
-  exportPanel.appendChild(exportPre);
-  section.appendChild(exportPanel);
 
   // Add form
   const form = document.createElement('form');
@@ -181,6 +170,27 @@ export function createGroceryList(api: GroceryApi): HTMLElement {
 
     li.appendChild(label);
     li.appendChild(deleteBtn);
+
+    if (item.checked && opts.onMoveToInventory) {
+      const moveActions = document.createElement('div');
+      moveActions.className = 'grocery-item__move-actions';
+
+      for (const loc of ['pantry', 'icebox'] as InventoryLocation[]) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.dataset.action = `move-to-${loc}`;
+        btn.textContent = `→ ${loc.charAt(0).toUpperCase() + loc.slice(1)}`;
+        btn.addEventListener('click', async () => {
+          await opts.onMoveToInventory!(item, loc);
+          items = items.filter((i) => i.id !== item.id);
+          rerender();
+        });
+        moveActions.appendChild(btn);
+      }
+
+      li.appendChild(moveActions);
+    }
+
     return li;
   }
 
@@ -191,13 +201,12 @@ export function createGroceryList(api: GroceryApi): HTMLElement {
   });
 
   exportBtn.addEventListener('click', async () => {
-    if (!exportPanel.hidden) {
-      exportPanel.hidden = true;
-      return;
-    }
     const { text } = await api.export();
-    exportPre.textContent = text;
-    exportPanel.hidden = false;
+    await navigator.clipboard.writeText(text);
+    exportBtn.textContent = 'Copied!';
+    setTimeout(() => {
+      exportBtn.textContent = 'Export list';
+    }, 2000);
   });
 
   form.addEventListener('submit', async (e) => {

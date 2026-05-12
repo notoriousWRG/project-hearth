@@ -106,18 +106,26 @@ describe('createGroceryList', () => {
     await vi.waitFor(() => expect(api.clearChecked).toHaveBeenCalled());
   });
 
-  it('export button calls api.export and shows text in panel', async () => {
+  it('export button copies text to clipboard and shows Copied feedback', async () => {
+    const writeText = vi.fn(async () => {});
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText },
+      writable: true,
+      configurable: true,
+    });
+
     const api = makeApi([makeItem()]);
     const el = createGroceryList(api);
     container.appendChild(el);
     await vi.waitFor(() => expect(el.querySelector('[data-action="export"]')).toBeTruthy());
 
-    (el.querySelector('[data-action="export"]') as HTMLButtonElement).click();
+    const exportBtn = el.querySelector('[data-action="export"]') as HTMLButtonElement;
+    exportBtn.click();
 
     await vi.waitFor(() => {
       expect(api.export).toHaveBeenCalled();
-      expect(el.querySelector('.grocery-export-panel')).toBeTruthy();
-      expect(el.querySelector('.grocery-export-panel')?.textContent).toContain('Apples');
+      expect(writeText).toHaveBeenCalledWith('Produce\n- Apples\n\nDairy\n- Milk');
+      expect(exportBtn.textContent).toContain('Copied');
     });
   });
 });

@@ -44,29 +44,10 @@ function groupByCategory(items: InventoryItem[]): Map<GroceryCategory, Inventory
   return map;
 }
 
-export function createInventorySection(api: InventoryApi): HTMLElement {
+export function createInventoryList(location: InventoryLocation, api: InventoryApi): HTMLElement {
   const section = document.createElement('section');
   section.className = 'inventory-section';
 
-  // Location tabs
-  const tabBar = document.createElement('div');
-  tabBar.className = 'inventory-location-tabs';
-
-  const pantryBtn = document.createElement('button');
-  pantryBtn.type = 'button';
-  pantryBtn.dataset.location = 'pantry';
-  pantryBtn.textContent = 'Pantry';
-
-  const iceboxBtn = document.createElement('button');
-  iceboxBtn.type = 'button';
-  iceboxBtn.dataset.location = 'icebox';
-  iceboxBtn.textContent = 'Icebox';
-
-  tabBar.appendChild(pantryBtn);
-  tabBar.appendChild(iceboxBtn);
-  section.appendChild(tabBar);
-
-  // Add form
   const form = document.createElement('form');
   form.className = 'inventory-add-form';
 
@@ -85,15 +66,6 @@ export function createInventorySection(api: InventoryApi): HTMLElement {
     catSelect.appendChild(opt);
   }
 
-  const locationSelect = document.createElement('select');
-  locationSelect.name = 'location';
-  for (const loc of ['pantry', 'icebox'] as InventoryLocation[]) {
-    const opt = document.createElement('option');
-    opt.value = loc;
-    opt.textContent = loc.charAt(0).toUpperCase() + loc.slice(1);
-    locationSelect.appendChild(opt);
-  }
-
   const notesInput = document.createElement('input');
   notesInput.type = 'text';
   notesInput.placeholder = 'Notes (optional)';
@@ -105,38 +77,24 @@ export function createInventorySection(api: InventoryApi): HTMLElement {
 
   form.appendChild(nameInput);
   form.appendChild(catSelect);
-  form.appendChild(locationSelect);
   form.appendChild(notesInput);
   form.appendChild(addBtn);
   section.appendChild(form);
 
-  // Content area
   const content = document.createElement('div');
   content.className = 'inventory-content';
   section.appendChild(content);
 
-  let allItems: InventoryItem[] = [];
-  let activeLocation: InventoryLocation = 'pantry';
-
-  function updateTabStyles() {
-    pantryBtn.className =
-      'inventory-location-tab' +
-      (activeLocation === 'pantry' ? ' inventory-location-tab--active' : '');
-    iceboxBtn.className =
-      'inventory-location-tab' +
-      (activeLocation === 'icebox' ? ' inventory-location-tab--active' : '');
-  }
+  let items: InventoryItem[] = [];
 
   function rerender() {
     content.innerHTML = '';
-    updateTabStyles();
-
-    const locationItems = allItems.filter((i) => i.location === activeLocation);
+    const locationItems = items.filter((i) => i.location === location);
 
     if (locationItems.length === 0) {
       const empty = document.createElement('p');
       empty.className = 'inventory-empty';
-      empty.textContent = 'No items in ' + activeLocation + '.';
+      empty.textContent = `No items in ${location}.`;
       content.appendChild(empty);
       return;
     }
@@ -191,7 +149,7 @@ export function createInventorySection(api: InventoryApi): HTMLElement {
 
     deleteBtn.addEventListener('click', async () => {
       await api.remove(item.id);
-      allItems = allItems.filter((i) => i.id !== item.id);
+      items = items.filter((i) => i.id !== item.id);
       rerender();
     });
 
@@ -222,27 +180,15 @@ export function createInventorySection(api: InventoryApi): HTMLElement {
 
     saveBtn.addEventListener('click', async () => {
       const updated = await api.update(item.id, { notes: input.value });
-      allItems = allItems.map((i) => (i.id === updated.id ? updated : i));
+      items = items.map((i) => (i.id === updated.id ? updated : i));
       notesSpan.textContent = updated.notes || '';
-      const editNotesBtn = document.createElement('button');
-      editNotesBtn.type = 'button';
-      editNotesBtn.dataset.action = 'edit-notes';
-      editNotesBtn.textContent = 'Edit notes';
-      editNotesBtn.addEventListener('click', () => {
-        editNotesBtn.replaceWith(buildNotesEditor(updated, notesSpan));
-      });
-      wrapper.replaceWith(editNotesBtn);
+      const newEditBtn = makeEditNotesBtn(updated, notesSpan);
+      wrapper.replaceWith(newEditBtn);
     });
 
     cancelBtn.addEventListener('click', () => {
-      const editNotesBtn = document.createElement('button');
-      editNotesBtn.type = 'button';
-      editNotesBtn.dataset.action = 'edit-notes';
-      editNotesBtn.textContent = 'Edit notes';
-      editNotesBtn.addEventListener('click', () => {
-        editNotesBtn.replaceWith(buildNotesEditor(item, notesSpan));
-      });
-      wrapper.replaceWith(editNotesBtn);
+      const newEditBtn = makeEditNotesBtn(item, notesSpan);
+      wrapper.replaceWith(newEditBtn);
     });
 
     wrapper.appendChild(input);
@@ -251,15 +197,16 @@ export function createInventorySection(api: InventoryApi): HTMLElement {
     return wrapper;
   }
 
-  pantryBtn.addEventListener('click', () => {
-    activeLocation = 'pantry';
-    rerender();
-  });
-
-  iceboxBtn.addEventListener('click', () => {
-    activeLocation = 'icebox';
-    rerender();
-  });
+  function makeEditNotesBtn(item: InventoryItem, notesSpan: HTMLElement): HTMLButtonElement {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.dataset.action = 'edit-notes';
+    btn.textContent = 'Edit notes';
+    btn.addEventListener('click', () => {
+      btn.replaceWith(buildNotesEditor(item, notesSpan));
+    });
+    return btn;
+  }
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -268,11 +215,10 @@ export function createInventorySection(api: InventoryApi): HTMLElement {
     const created = await api.create({
       name,
       category: catSelect.value as GroceryCategory,
-      location: locationSelect.value as InventoryLocation,
+      location,
       notes: notesInput.value.trim(),
     });
-    allItems = [...allItems, created];
-    activeLocation = created.location;
+    items = [...items, created];
     nameInput.value = '';
     notesInput.value = '';
     rerender();
@@ -281,7 +227,7 @@ export function createInventorySection(api: InventoryApi): HTMLElement {
   api
     .list()
     .then((fetched) => {
-      allItems = fetched;
+      items = fetched;
       rerender();
     })
     .catch(() => {

@@ -1805,27 +1805,6 @@
   gap: var(--space-md);
 }
 
-.inventory-location-tabs {
-  display: flex;
-  gap: var(--space-xs);
-  border-bottom: 1px solid var(--color-border);
-  padding-bottom: var(--space-xs);
-}
-
-.inventory-location-tab {
-  background: transparent;
-  border: none;
-  border-bottom: 2px solid transparent;
-  color: var(--color-muted);
-  cursor: pointer;
-  font-size: 0.9375rem;
-  font-family: var(--font-body);
-  padding: var(--space-xs) var(--space-sm);
-  transition:
-    color var(--transition-fast),
-    border-color var(--transition-fast);
-}
-
 .inventory-location-tab:hover {
   color: var(--color-text);
 }
@@ -1895,26 +1874,6 @@
   padding: var(--space-lg) 0;
 }
 
-/* ─── Grocery export panel ───────────────────────────────────── */
-
-.grocery-export-panel {
-  background: var(--color-bg-alt);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  padding: var(--space-md);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-sm);
-}
-
-.grocery-export-panel__text {
-  font-family: var(--font-mono, monospace);
-  font-size: 0.875rem;
-  white-space: pre-wrap;
-  color: var(--color-text);
-  margin: 0;
-}
-
 /* ─── Meal slot picker ───────────────────────────────────────── */
 
 .meal-slot__picker-btn {
@@ -1946,4 +1905,73 @@
   color: var(--color-text);
   margin-top: 0.2rem;
   width: 100%;
+}
+
+/* ─── Grocery view tabs ──────────────────────────────────────── */
+
+.grocery-view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.grocery-view__tabs {
+  display: flex;
+  gap: var(--space-xs);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--space-xs);
+}
+
+.grocery-tab {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--color-muted);
+  cursor: pointer;
+  font-size: 0.9375rem;
+  font-family: var(--font-body);
+  padding: var(--space-xs) var(--space-sm);
+  transition:
+    color var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.grocery-tab:hover {
+  color: var(--color-text);
+}
+
+.grocery-tab--active {
+  color: var(--color-accent);
+  border-bottom-color: var(--color-accent);
+}
+
+.grocery-view__content {
+  flex: 1;
+}
+
+/* ─── Move-to-inventory actions ──────────────────────────────── */
+
+.grocery-item__move-actions {
+  display: flex;
+  gap: var(--space-xs);
+  margin-left: auto;
+}
+
+.grocery-item__move-actions button {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-muted);
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-family: var(--font-body);
+  padding: 0.15rem var(--space-xs);
+  transition:
+    color var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.grocery-item__move-actions button:hover {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
 }

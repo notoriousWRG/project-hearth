@@ -3,7 +3,7 @@ import { createTodoList } from '../components/TodoList.js';
 import { createChoreList } from '../components/ChoreList.js';
 import { createRemindersPanel } from '../components/RemindersPanel.js';
 import { createMealPlanGrid } from '../components/MealPlanGrid.js';
-import { createGroceryList } from '../components/GroceryList.js';
+import { createGroceryView } from '../components/GroceryView.js';
 import { createDashboardNav } from '../components/DashboardNav.js';
 import type { DashboardTab } from '../components/DashboardNav.js';
 import * as api from '../utils/api.js';
@@ -49,7 +49,7 @@ export function createParentDashboard(userId: number): HTMLElement {
         createMealPlanGrid({ ...api.meals, listSavedMeals: api.savedMeals.list }),
       );
     } else {
-      content.appendChild(createGroceryList(api.grocery));
+      content.appendChild(createGroceryView({ grocery: api.grocery, inventory: api.inventory }));
     }
   }
 

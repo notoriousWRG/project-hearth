@@ -237,7 +237,7 @@ describe('POST /api/meal-plan/generate-grocery', () => {
     expect(res.body).toHaveLength(0);
   });
 
-  it('legacy freetext entry (no meal_id) produces one grocery item', async () => {
+  it('freetext-only entry (no meal_id) is skipped — meal names are not ingredients', async () => {
     await request(app).put('/api/meal-plan').send({
       week_start_date: week,
       day_of_week: 1,
@@ -246,8 +246,6 @@ describe('POST /api/meal-plan/generate-grocery', () => {
     });
     const res = await request(app).post('/api/meal-plan/generate-grocery').send({ week });
     expect(res.status).toBe(200);
-    expect(res.body).toHaveLength(1);
-    expect(res.body[0].name).toBe('Leftovers');
-    expect(res.body[0].category).toBe('other');
+    expect(res.body).toHaveLength(0);
   });
 });

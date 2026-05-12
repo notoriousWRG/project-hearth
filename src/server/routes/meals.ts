@@ -57,6 +57,78 @@ export function createMealsRouter(db: Database.Database): Router {
     res.status(204).send();
   });
 
+  // Read-only diagnostic — shows what generate-grocery would do without writing anything
+  router.get('/generate-grocery/debug', (req, res) => {
+    const week = String(req.query.week ?? '');
+    if (!week) {
+      res.status(400).json({ error: 'week query param required (YYYY-MM-DD)' });
+      return;
+    }
+
+    const planEntries = getMealsByWeek(db, week);
+    const entriesWithMealId: {
+      day: number;
+      type: string;
+      meal_id: number;
+      ingredientCount: number;
+    }[] = [];
+    const entriesWithoutMealId: { day: number; type: string; description: string }[] = [];
+
+    const ingredientMap = new Map<string, { name: string; category: GroceryCategory }>();
+    for (const entry of planEntries) {
+      if (entry.meal_id != null) {
+        const savedMeal = getSavedMeal(db, entry.meal_id);
+        const ingCount = savedMeal?.ingredients.length ?? 0;
+        entriesWithMealId.push({
+          day: entry.day_of_week,
+          type: entry.meal_type,
+          meal_id: entry.meal_id,
+          ingredientCount: ingCount,
+        });
+        if (savedMeal) {
+          for (const ing of savedMeal.ingredients) {
+            const key = ing.name.toLowerCase();
+            if (!ingredientMap.has(key))
+              ingredientMap.set(key, { name: ing.name, category: ing.category });
+          }
+        }
+      } else if (entry.description) {
+        entriesWithoutMealId.push({
+          day: entry.day_of_week,
+          type: entry.meal_type,
+          description: entry.description,
+        });
+      }
+    }
+
+    const inventoryItems = getInventoryItems(db);
+    const subtractedByInventory: string[] = [];
+    for (const inv of inventoryItems) {
+      if (ingredientMap.delete(inv.name.toLowerCase())) subtractedByInventory.push(inv.name);
+    }
+
+    const existingGrocery = getAllGroceryItems(db);
+    const existingUncheckedNames = new Set(
+      existingGrocery.filter((i) => !i.checked).map((i) => i.name.toLowerCase()),
+    );
+    const skippedExisting: string[] = [];
+    const wouldAdd: string[] = [];
+    for (const [key, { name }] of ingredientMap) {
+      if (existingUncheckedNames.has(key)) skippedExisting.push(name);
+      else wouldAdd.push(name);
+    }
+
+    res.json({
+      week,
+      planEntries: planEntries.length,
+      entriesWithMealId,
+      entriesWithoutMealId,
+      subtractedByInventory,
+      skippedExisting,
+      wouldAdd,
+    });
+  });
+
   // Must come before /:id to avoid 'generate-grocery' being treated as an id
   router.post('/generate-grocery', (req, res) => {
     const { week } = req.body as { week?: string };
@@ -80,12 +152,6 @@ export function createMealsRouter(db: Database.Database): Router {
               ingredientMap.set(key, { name: ing.name, category: ing.category });
             }
           }
-        }
-      } else if (entry.description) {
-        // Legacy freetext entry — treat description as a single ingredient
-        const key = entry.description.toLowerCase();
-        if (!ingredientMap.has(key)) {
-          ingredientMap.set(key, { name: entry.description, category: 'other' });
         }
       }
     }

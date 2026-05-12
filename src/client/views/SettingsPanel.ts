@@ -3,7 +3,6 @@ import { createChoreManagementSection } from '../components/ChoreManagementSecti
 import { createAllowanceConfigSection } from '../components/AllowanceConfigSection.js';
 import { createUserManagementSection } from '../components/UserManagementSection.js';
 import { createSavedMealsSection } from '../components/SavedMealsSection.js';
-import { createInventorySection } from '../components/InventorySection.js';
 import { applyTheme, THEMES, type Theme } from '../utils/theme.js';
 import { createPinSettingsApi, createPinAllowanceApi, createPinStreaksApi } from '../utils/api.js';
 import * as api from '../utils/api.js';
@@ -14,7 +13,6 @@ type SettingsTab =
   | 'allowance'
   | 'balances'
   | 'meals'
-  | 'inventory'
   | 'theme'
   | 'pin'
   | 'payout'
@@ -26,7 +24,6 @@ const TAB_LABELS: Record<SettingsTab, string> = {
   allowance: 'Allowance',
   balances: 'Balances',
   meals: 'Saved Meals',
-  inventory: 'Inventory',
   theme: 'Theme',
   pin: 'PIN',
   payout: 'Payout',
@@ -97,8 +94,6 @@ export function createSettingsPanel(
       content.appendChild(createBalancesSection(childUsers, pinAllowanceApi));
     } else if (activeTab === 'meals') {
       content.appendChild(createSavedMealsSection(api.savedMeals));
-    } else if (activeTab === 'inventory') {
-      content.appendChild(createInventorySection(api.inventory));
     } else if (activeTab === 'theme') {
       content.appendChild(createThemeSection());
     } else if (activeTab === 'pin') {
