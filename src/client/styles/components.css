@@ -1349,9 +1349,31 @@
 }
 
 .summary-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
   font-size: 1.5rem;
   font-weight: 600;
   color: var(--color-text-primary);
+}
+
+.summary-moon {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  flex-shrink: 0;
+}
+
+.summary-moon__emoji {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.summary-moon__name {
+  font-size: 0.875rem;
+  color: var(--color-muted);
+  white-space: nowrap;
 }
 
 .summary-section {

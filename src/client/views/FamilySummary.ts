@@ -1,5 +1,6 @@
 import type { SummaryResponse } from '../../shared/types.js';
 import { summary as summaryApi, chores as choreApi } from '../utils/api.js';
+import { getMoonPhase } from '../utils/moonPhase.js';
 
 const REFRESH_MS = 60_000;
 
@@ -28,11 +29,30 @@ export function createFamilySummary(onSelectChild: (userId: number) => void): Su
 
     const header = document.createElement('div');
     header.className = 'summary-header';
-    header.textContent = now.toLocaleDateString('en-US', {
+
+    const dateSpan = document.createElement('span');
+    dateSpan.className = 'summary-date';
+    dateSpan.textContent = now.toLocaleDateString('en-US', {
       weekday: 'long',
       month: 'long',
       day: 'numeric',
     });
+
+    const moon = getMoonPhase(now);
+    const moonEl = document.createElement('div');
+    moonEl.className = 'summary-moon';
+    const moonEmoji = document.createElement('span');
+    moonEmoji.className = 'summary-moon__emoji';
+    moonEmoji.setAttribute('aria-hidden', 'true');
+    moonEmoji.textContent = moon.emoji;
+    const moonName = document.createElement('span');
+    moonName.className = 'summary-moon__name';
+    moonName.textContent = moon.name;
+    moonEl.appendChild(moonEmoji);
+    moonEl.appendChild(moonName);
+
+    header.appendChild(dateSpan);
+    header.appendChild(moonEl);
     container.appendChild(header);
 
     // Children progress cards

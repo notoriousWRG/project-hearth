@@ -194,3 +194,19 @@ export interface SummaryResponse {
   meals: TodayMeals;
   affirmation: string;
 }
+
+export type MoonPhaseName =
+  | 'New Moon'
+  | 'Waxing Crescent'
+  | 'First Quarter'
+  | 'Waxing Gibbous'
+  | 'Full Moon'
+  | 'Waning Gibbous'
+  | 'Last Quarter'
+  | 'Waning Crescent';
+
+export interface MoonPhaseInfo {
+  name: MoonPhaseName;
+  emoji: string;
+  fraction: number;
+}
