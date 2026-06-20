@@ -9,6 +9,7 @@ export default defineConfig({
   },
   server: {
     host: true,
+    allowedHosts: ['hearth.local'],
     proxy: {
       '/api': {
         target: 'http://localhost:3001',
