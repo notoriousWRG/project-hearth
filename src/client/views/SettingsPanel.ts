@@ -4,12 +4,17 @@ import { createAllowanceConfigSection } from '../components/AllowanceConfigSecti
 import { createUserManagementSection } from '../components/UserManagementSection.js';
 import { createSavedMealsSection } from '../components/SavedMealsSection.js';
 import { createChoreHistorySection } from '../components/ChoreHistorySection.js';
+import { createCleaningManagementSection } from '../components/CleaningManagementSection.js';
+import { createEatingOutConfigSection } from '../components/EatingOutConfigSection.js';
+import { createPhoneBookManagementSection } from '../components/PhoneBookManagementSection.js';
 import { applyTheme, THEMES, type Theme } from '../utils/theme.js';
 import {
   createPinSettingsApi,
   createPinAllowanceApi,
   createPinStreaksApi,
   createPinChoreHistoryApi,
+  createPinCleaningApi,
+  createPinPhoneBookApi,
 } from '../utils/api.js';
 import * as api from '../utils/api.js';
 
@@ -20,6 +25,9 @@ type SettingsTab =
   | 'allowance'
   | 'balances'
   | 'meals'
+  | 'cleaning'
+  | 'eating-out'
+  | 'phone-book'
   | 'theme'
   | 'pin'
   | 'reset-time';
@@ -31,6 +39,9 @@ const TAB_LABELS: Record<SettingsTab, string> = {
   allowance: 'Allowance',
   balances: 'Balances',
   meals: 'Saved Meals',
+  cleaning: 'Cleaning',
+  'eating-out': 'Eating Out',
+  'phone-book': 'Phone Book',
   theme: 'Theme',
   pin: 'PIN',
   'reset-time': 'Reset Time',
@@ -49,6 +60,8 @@ export function createSettingsPanel(
   const pinAllowanceApi = createPinAllowanceApi(pin);
   const pinStreaksApi = createPinStreaksApi(pin);
   const pinChoreHistoryApi = createPinChoreHistoryApi(pin);
+  const pinCleaningApi = createPinCleaningApi(pin);
+  const pinPhoneBookApi = createPinPhoneBookApi(pin);
 
   const view = document.createElement('div');
   view.className = 'settings-panel';
@@ -103,6 +116,12 @@ export function createSettingsPanel(
       content.appendChild(createBalancesSection(childUsers, pinAllowanceApi));
     } else if (activeTab === 'meals') {
       content.appendChild(createSavedMealsSection(api.savedMeals));
+    } else if (activeTab === 'cleaning') {
+      content.appendChild(createCleaningManagementSection(pinCleaningApi));
+    } else if (activeTab === 'eating-out') {
+      content.appendChild(createEatingOutConfigSection(pinSettingsApi));
+    } else if (activeTab === 'phone-book') {
+      content.appendChild(createPhoneBookManagementSection(pinPhoneBookApi));
     } else if (activeTab === 'theme') {
       content.appendChild(createThemeSection());
     } else if (activeTab === 'pin') {

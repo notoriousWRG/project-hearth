@@ -131,6 +131,33 @@ CREATE TABLE IF NOT EXISTS inventory_items (
   notes    TEXT    NOT NULL DEFAULT '',
   UNIQUE(name, location)
 );
+
+CREATE TABLE IF NOT EXISTS cleaning_zones (
+  id       INTEGER PRIMARY KEY AUTOINCREMENT,
+  name     TEXT    NOT NULL,
+  position INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS cleaning_tasks (
+  id           INTEGER PRIMARY KEY AUTOINCREMENT,
+  section      TEXT    NOT NULL,
+  zone_id      INTEGER REFERENCES cleaning_zones(id) ON DELETE CASCADE,
+  day_of_week  INTEGER,
+  group_label  TEXT,
+  title        TEXT    NOT NULL,
+  position     INTEGER NOT NULL DEFAULT 0,
+  completed    INTEGER NOT NULL DEFAULT 0,
+  completed_at TEXT,
+  created_at   TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS phone_book (
+  id       INTEGER PRIMARY KEY AUTOINCREMENT,
+  name     TEXT    NOT NULL,
+  phone    TEXT    NOT NULL,
+  emoji    TEXT    NOT NULL DEFAULT '',
+  position INTEGER NOT NULL DEFAULT 0
+);
 `;
 
 export function runSchema(db: Database.Database): void {
@@ -167,6 +194,15 @@ export function runMigrations(db: Database.Database): void {
       date          TEXT    NOT NULL,
       amount_earned REAL    NOT NULL DEFAULT 0,
       UNIQUE(user_id, date)
+    )`);
+  }
+  if (!tables.some((t) => t.name === 'phone_book')) {
+    db.exec(`CREATE TABLE phone_book (
+      id       INTEGER PRIMARY KEY AUTOINCREMENT,
+      name     TEXT    NOT NULL,
+      phone    TEXT    NOT NULL,
+      emoji    TEXT    NOT NULL DEFAULT '',
+      position INTEGER NOT NULL DEFAULT 0
     )`);
   }
 }

@@ -19,6 +19,9 @@ const EXPECTED_TABLES = [
   'meals',
   'meal_ingredients',
   'inventory_items',
+  'cleaning_zones',
+  'cleaning_tasks',
+  'phone_book',
 ];
 
 let db: Database.Database;
@@ -33,7 +36,7 @@ afterEach(() => {
 });
 
 describe('runSchema', () => {
-  it('creates all 15 tables', () => {
+  it('creates all 18 tables', () => {
     const rows = db
       .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'")
       .all() as Array<{ name: string }>;

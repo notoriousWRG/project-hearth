@@ -1,6 +1,8 @@
 import type { User } from '../../shared/types.js';
 
-type TopNavElement = HTMLElement & { setActive: (id: number | null, isSummary?: boolean) => void };
+type TopNavElement = HTMLElement & {
+  setActive: (id: number | null, isSummary?: boolean, isPhoneBook?: boolean) => void;
+};
 
 export function createTopNav(
   users: User[],
@@ -8,6 +10,7 @@ export function createTopNav(
   onSelectUser: (user: User) => void,
   onSelectSummary: () => void,
   onSelectSettings: () => void,
+  onSelectPhoneBook: () => void,
 ): TopNavElement {
   const nav = document.createElement('nav') as TopNavElement;
   nav.className = 'top-nav';
@@ -30,6 +33,25 @@ export function createTopNav(
   summaryBtn.appendChild(summaryLabel);
   summaryBtn.addEventListener('click', onSelectSummary);
   nav.appendChild(summaryBtn);
+
+  const phoneBookBtn = document.createElement('button');
+  phoneBookBtn.type = 'button';
+  phoneBookBtn.className = 'top-nav__btn';
+  phoneBookBtn.dataset.phonebook = '';
+  phoneBookBtn.setAttribute('aria-label', 'Phone Book');
+
+  const phoneBookIcon = document.createElement('span');
+  phoneBookIcon.className = 'top-nav__icon';
+  phoneBookIcon.textContent = '📞';
+
+  const phoneBookLabel = document.createElement('span');
+  phoneBookLabel.className = 'top-nav__label';
+  phoneBookLabel.textContent = 'Phone Book';
+
+  phoneBookBtn.appendChild(phoneBookIcon);
+  phoneBookBtn.appendChild(phoneBookLabel);
+  phoneBookBtn.addEventListener('click', onSelectPhoneBook);
+  nav.appendChild(phoneBookBtn);
 
   const divider = document.createElement('div');
   divider.className = 'top-nav__divider';
@@ -80,12 +102,15 @@ export function createTopNav(
   settingsBtn.addEventListener('click', onSelectSettings);
   nav.appendChild(settingsBtn);
 
-  function setActive(id: number | null, isSummary = false): void {
+  function setActive(id: number | null, isSummary = false, isPhoneBook = false): void {
     for (const btn of nav.querySelectorAll<HTMLElement>('.top-nav__btn')) {
       btn.classList.remove('top-nav__btn--active');
       btn.removeAttribute('aria-current');
     }
-    if (isSummary) {
+    if (isPhoneBook) {
+      phoneBookBtn.classList.add('top-nav__btn--active');
+      phoneBookBtn.setAttribute('aria-current', 'page');
+    } else if (isSummary) {
       summaryBtn.classList.add('top-nav__btn--active');
       summaryBtn.setAttribute('aria-current', 'page');
     } else if (id !== null) {

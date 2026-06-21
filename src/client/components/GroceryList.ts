@@ -6,6 +6,25 @@ import type {
 } from '../../shared/types.js';
 import { createErrorBanner } from './ErrorBanner.js';
 
+function copyToClipboard(text: string): void {
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+  } else {
+    fallbackCopy(text);
+  }
+}
+
+function fallbackCopy(text: string): void {
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;opacity:0;pointer-events:none';
+  document.body.appendChild(ta);
+  ta.focus();
+  ta.select();
+  document.execCommand('copy');
+  document.body.removeChild(ta);
+}
+
 interface GroceryApi {
   list: () => Promise<GroceryItem[]>;
   create: (data: NewGroceryItem) => Promise<GroceryItem>;
@@ -202,7 +221,7 @@ export function createGroceryList(api: GroceryApi, opts: GroceryListOpts = {}): 
 
   exportBtn.addEventListener('click', async () => {
     const { text } = await api.export();
-    await navigator.clipboard.writeText(text);
+    copyToClipboard(text);
     exportBtn.textContent = 'Copied!';
     setTimeout(() => {
       exportBtn.textContent = 'Export list';

@@ -24,6 +24,14 @@ import type {
   Reminder,
   NewReminder,
   SummaryResponse,
+  CleaningBoard,
+  CleaningZone,
+  CleaningTask,
+  CleaningSection,
+  DailyGroupLabel,
+  EatingOutState,
+  PhoneBookEntry,
+  NewPhoneBookEntry,
 } from '../../shared/types.js';
 
 async function request<T>(
@@ -189,6 +197,60 @@ export function createPinChoreHistoryApi(pin: string) {
         { date, userId },
         h,
       ),
+  };
+}
+
+export const cleaning = {
+  getBoard: () => get<CleaningBoard>('/cleaning'),
+  complete: (id: number) => post<CleaningTask>(`/cleaning/tasks/${id}/complete`, {}),
+  uncomplete: (id: number) => post<CleaningTask>(`/cleaning/tasks/${id}/uncomplete`, {}),
+};
+
+export const eatingOut = {
+  get: () => get<EatingOutState>('/eating-out'),
+  subtract: (amount: number) => post<EatingOutState>('/eating-out/subtract', { amount }),
+  reset: () => post<EatingOutState>('/eating-out/reset', {}),
+};
+
+export function createPinCleaningApi(pin: string) {
+  const h = { 'x-pin': pin };
+  return {
+    getZones: () => request<CleaningZone[]>('GET', '/cleaning/zones', undefined, h),
+    createZone: (data: { name: string; position: number }) =>
+      request<CleaningZone>('POST', '/cleaning/zones', data, h),
+    updateZone: (id: number, data: Partial<{ name: string; position: number }>) =>
+      request<CleaningZone>('PUT', `/cleaning/zones/${id}`, data, h),
+    deleteZone: (id: number) => request<void>('DELETE', `/cleaning/zones/${id}`, undefined, h),
+    createTask: (data: {
+      section: CleaningSection;
+      zone_id: number | null;
+      day_of_week: number | null;
+      group_label: DailyGroupLabel | null;
+      title: string;
+      position: number;
+    }) => request<CleaningTask>('POST', '/cleaning/tasks', data, h),
+    updateTask: (id: number, data: Partial<{ title: string; position: number }>) =>
+      request<CleaningTask>('PUT', `/cleaning/tasks/${id}`, data, h),
+    deleteTask: (id: number) => request<void>('DELETE', `/cleaning/tasks/${id}`, undefined, h),
+    getFlightPlan: () =>
+      request<{ labels: string[] }>('GET', '/cleaning/flight-plan', undefined, h),
+    setFlightPlan: (labels: string[]) =>
+      request<{ labels: string[] }>('PUT', '/cleaning/flight-plan', { labels }, h),
+  };
+}
+
+export const phoneBook = {
+  list: () => get<PhoneBookEntry[]>('/phone-book'),
+};
+
+export function createPinPhoneBookApi(pin: string) {
+  const h = { 'x-pin': pin };
+  return {
+    list: () => request<PhoneBookEntry[]>('GET', '/phone-book', undefined, h),
+    create: (data: NewPhoneBookEntry) => request<PhoneBookEntry>('POST', '/phone-book', data, h),
+    update: (id: number, data: Partial<NewPhoneBookEntry>) =>
+      request<PhoneBookEntry>('PUT', `/phone-book/${id}`, data, h),
+    remove: (id: number) => request<void>('DELETE', `/phone-book/${id}`, undefined, h),
   };
 }
 

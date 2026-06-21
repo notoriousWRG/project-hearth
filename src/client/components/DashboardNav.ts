@@ -1,7 +1,7 @@
 export type DashboardTab = 'overview' | 'meals' | 'grocery';
 
 const TAB_LABELS: Record<DashboardTab, string> = {
-  overview: 'Overview',
+  overview: 'Home',
   meals: 'Meal Plan',
   grocery: 'Grocery',
 };

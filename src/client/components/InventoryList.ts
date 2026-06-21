@@ -44,7 +44,15 @@ function groupByCategory(items: InventoryItem[]): Map<GroceryCategory, Inventory
   return map;
 }
 
-export function createInventoryList(location: InventoryLocation, api: InventoryApi): HTMLElement {
+interface InventoryListOpts {
+  onAddToShoppingList?: (item: InventoryItem) => Promise<void>;
+}
+
+export function createInventoryList(
+  location: InventoryLocation,
+  api: InventoryApi,
+  opts: InventoryListOpts = {},
+): HTMLElement {
   const section = document.createElement('section');
   section.className = 'inventory-section';
 
@@ -157,6 +165,22 @@ export function createInventoryList(location: InventoryLocation, api: InventoryA
     row.appendChild(notesSpan);
     row.appendChild(editNotesBtn);
     row.appendChild(deleteBtn);
+
+    if (opts.onAddToShoppingList) {
+      const addBtn = document.createElement('button');
+      addBtn.type = 'button';
+      addBtn.dataset.action = 'add-to-shopping';
+      addBtn.textContent = '+ List';
+      addBtn.setAttribute('aria-label', `Add "${item.name}" to shopping list`);
+      addBtn.addEventListener('click', async () => {
+        addBtn.disabled = true;
+        await opts.onAddToShoppingList!(item);
+        items = items.filter((i) => i.id !== item.id);
+        rerender();
+      });
+      row.appendChild(addBtn);
+    }
+
     return row;
   }
 

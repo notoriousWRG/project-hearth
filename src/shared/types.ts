@@ -195,6 +195,44 @@ export interface SummaryResponse {
   affirmation: string;
 }
 
+export type CleaningSection = 'zone' | 'daily' | 'focus';
+export type DailyGroupLabel = 'morning' | 'before_bed' | 'homestead';
+
+export interface CleaningZone {
+  id: number;
+  name: string;
+  position: number;
+}
+
+export interface CleaningTask {
+  id: number;
+  section: CleaningSection;
+  zone_id: number | null;
+  day_of_week: DayOfWeek | null;
+  group_label: DailyGroupLabel | null;
+  title: string;
+  position: number;
+  completed: boolean;
+  completed_at: string | null;
+  created_at: string;
+}
+
+export interface CleaningBoard {
+  activeZone: CleaningZone | null;
+  todayFocus: string;
+  zoneTasks: CleaningTask[];
+  focusTasks: CleaningTask[];
+  morningTasks: CleaningTask[];
+  beforeBedTasks: CleaningTask[];
+  homesteadTasks: CleaningTask[];
+}
+
+export interface EatingOutState {
+  remaining: number;
+  weeklyAmount: number;
+  weekStart: string;
+}
+
 export type MoonPhaseName =
   | 'New Moon'
   | 'Waxing Crescent'
@@ -210,3 +248,13 @@ export interface MoonPhaseInfo {
   emoji: string;
   fraction: number;
 }
+
+export interface PhoneBookEntry {
+  id: number;
+  name: string;
+  phone: string;
+  emoji: string;
+  position: number;
+}
+
+export type NewPhoneBookEntry = Omit<PhoneBookEntry, 'id'>;

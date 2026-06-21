@@ -2232,3 +2232,518 @@
   color: var(--color-accent);
   border-color: var(--color-accent);
 }
+
+/* ─── Eating Out Bar ─────────────────────────────────────────── */
+
+.eating-out-bar {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md) var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.eating-out-bar__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
+.eating-out-bar__label {
+  font-size: 0.875rem;
+  color: var(--color-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.eating-out-bar__remaining {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.eating-out-bar__remaining--over {
+  color: var(--color-error, #c0392b);
+}
+
+.eating-out-bar__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  align-items: center;
+}
+
+.eating-out-bar__preset {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.3rem 0.6rem;
+  font-size: 0.875rem;
+  cursor: pointer;
+  color: var(--color-text);
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.eating-out-bar__preset:hover {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #fff;
+}
+
+.eating-out-bar__custom {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.eating-out-bar__custom-input {
+  width: 5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.3rem 0.5rem;
+  font-size: 0.875rem;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.eating-out-bar__custom-btn {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.3rem 0.6rem;
+  cursor: pointer;
+  color: var(--color-text);
+}
+
+.eating-out-bar__reset {
+  margin-left: auto;
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.3rem 0.6rem;
+  font-size: 0.75rem;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.eating-out-bar__reset:hover {
+  color: var(--color-text);
+  border-color: var(--color-muted);
+}
+
+/* ─── Cleaning Board ─────────────────────────────────────────── */
+
+.cleaning-board {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.cleaning-board__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.cleaning-board__zone {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.cleaning-board__focus {
+  font-size: 0.875rem;
+  color: var(--color-muted);
+}
+
+.cleaning-group {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+}
+
+.cleaning-group__label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-muted);
+  margin: 0 0 var(--space-sm) 0;
+}
+
+.cleaning-group__list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.cleaning-group__empty {
+  font-size: 0.875rem;
+  color: var(--color-muted);
+  margin: 0;
+}
+
+.cleaning-task {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.cleaning-task--done .cleaning-task__title {
+  text-decoration: line-through;
+  color: var(--color-muted);
+}
+
+.cleaning-task__check {
+  width: 1.5rem;
+  height: 1.5rem;
+  min-width: 1.5rem;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--color-accent);
+  transition:
+    border-color var(--transition-fast),
+    background var(--transition-fast);
+}
+
+.cleaning-task--done .cleaning-task__check {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #fff;
+}
+
+.cleaning-task__title {
+  font-size: 0.9rem;
+  color: var(--color-text);
+}
+
+/* ─── Cleaning Management Section (Settings) ─────────────────── */
+
+.cleaning-management__subnav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-md);
+}
+
+.cleaning-management__subtab {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.3rem 0.75rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  color: var(--color-muted);
+}
+
+.cleaning-management__subtab--active {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #fff;
+}
+
+.cleaning-management__zone-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--space-sm) 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.cleaning-management__zone-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+}
+
+.cleaning-management__zone-item--active {
+  border-color: var(--color-accent);
+  background: var(--color-surface);
+}
+
+.cleaning-management__zone-name {
+  flex: 1;
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.cleaning-management__zone-delete {
+  background: none;
+  border: none;
+  color: var(--color-muted);
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0 0.25rem;
+}
+
+.cleaning-management__task-area {
+  margin-top: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--color-border);
+}
+
+.cleaning-management__task-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--space-sm) 0;
+}
+
+.cleaning-management__task-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: var(--space-xs) 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.875rem;
+}
+
+.cleaning-management__task-item button {
+  background: none;
+  border: none;
+  color: var(--color-muted);
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.cleaning-management__add-form {
+  display: flex;
+  gap: var(--space-xs);
+  margin-top: var(--space-sm);
+}
+
+.cleaning-management__add-form input {
+  flex: 1;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.3rem 0.5rem;
+  font-size: 0.875rem;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.cleaning-management__group {
+  margin-bottom: var(--space-lg);
+}
+
+.cleaning-management__fp-row {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+  margin-bottom: var(--space-xs);
+}
+
+.cleaning-management__fp-row label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  width: 100%;
+  font-size: 0.875rem;
+}
+
+.cleaning-management__fp-row input {
+  flex: 1;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.3rem 0.5rem;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+/* ─── Eating Out Config (Settings) ──────────────────────────── */
+
+.eating-out-config__row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-md);
+}
+
+.eating-out-config__row label {
+  font-size: 0.875rem;
+  color: var(--color-text);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.eating-out-config__row input {
+  width: 8rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.4rem 0.6rem;
+  font-size: 1rem;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+/* ─── Phone Book View ────────────────────────────────────────── */
+
+.phone-book-view {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: var(--space-lg);
+}
+
+.phone-book-view__header {
+  margin-bottom: var(--space-xl);
+}
+
+.phone-book-view__header h1 {
+  font-family: var(--font-heading);
+  font-size: 2rem;
+  color: var(--color-heading);
+}
+
+.phone-book-view__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.phone-book-view__empty {
+  color: var(--color-muted);
+  font-style: italic;
+  text-align: center;
+  padding: var(--space-xl) 0;
+}
+
+.phone-book-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg) var(--space-xl);
+  box-shadow: var(--shadow-sm);
+}
+
+.phone-book-card__emoji {
+  font-size: 3rem;
+  line-height: 1;
+  flex-shrink: 0;
+  width: 4rem;
+  text-align: center;
+}
+
+.phone-book-card__info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.phone-book-card__name {
+  font-family: var(--font-heading);
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--color-heading);
+  line-height: 1.1;
+}
+
+.phone-book-card__phone {
+  font-size: 1.5rem;
+  color: var(--color-text);
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Phone Book Management (Settings) ──────────────────────── */
+
+.phone-book-mgmt__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+}
+
+.phone-book-mgmt__empty {
+  color: var(--color-muted);
+  font-style: italic;
+}
+
+.phone-book-mgmt__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.phone-book-mgmt__row-label {
+  font-size: 1rem;
+  color: var(--color-text);
+  flex: 1;
+}
+
+.phone-book-mgmt__row-actions {
+  display: flex;
+  gap: var(--space-xs);
+  flex-shrink: 0;
+}
+
+.phone-book-mgmt__form-section h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: var(--space-sm);
+  color: var(--color-heading);
+}
+
+.phone-book-mgmt__form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.phone-book-mgmt__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.phone-book-mgmt__field label {
+  font-size: 0.875rem;
+  color: var(--color-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.phone-book-mgmt__field input {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 1rem;
+  background: var(--color-bg);
+  color: var(--color-text);
+  width: 100%;
+  max-width: 24rem;
+}
+
+.phone-book-mgmt__btn-row {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: var(--space-xs);
+}

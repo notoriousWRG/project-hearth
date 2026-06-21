@@ -13,6 +13,9 @@ import { createAllowanceRouter } from './routes/allowance.js';
 import { createSummaryRouter } from './routes/summary.js';
 import { createSavedMealsRouter } from './routes/savedMeals.js';
 import { createInventoryRouter } from './routes/inventory.js';
+import { createCleaningRouter } from './routes/cleaning.js';
+import { createEatingOutRouter } from './routes/eatingOut.js';
+import { createPhoneBookRouter } from './routes/phoneBook.js';
 
 export function createApp(db: Database.Database): Express {
   const app = express();
@@ -30,6 +33,9 @@ export function createApp(db: Database.Database): Express {
   app.use('/api/summary', createSummaryRouter(db));
   app.use('/api/meals', createSavedMealsRouter(db));
   app.use('/api/inventory', createInventoryRouter(db));
+  app.use('/api/cleaning', createCleaningRouter(db));
+  app.use('/api/eating-out', createEatingOutRouter(db));
+  app.use('/api/phone-book', createPhoneBookRouter(db));
 
   return app;
 }

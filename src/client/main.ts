@@ -10,6 +10,7 @@ import { createParentDashboard } from './views/ParentDashboard.js';
 import { createChildDashboard } from './views/ChildDashboard.js';
 import { createSettingsPanel } from './views/SettingsPanel.js';
 import { createFamilySummary } from './views/FamilySummary.js';
+import { createPhoneBookView } from './views/PhoneBookView.js';
 
 const THEME_PARENT_KEY = 'hearth:theme:parent';
 const THEME_CHILD_KEY = 'hearth:theme:child';
@@ -46,6 +47,15 @@ function showDashboard(app: HTMLElement, user: User): void {
     activeView = view;
     app.appendChild(view);
   }
+}
+
+function showPhoneBook(app: HTMLElement): void {
+  clearActiveView(app);
+  applyStoredTheme('parent');
+  document.documentElement.setAttribute('data-view', 'parent');
+  const view = createPhoneBookView();
+  activeView = view;
+  app.appendChild(view);
 }
 
 function showSummary(app: HTMLElement, onSelectChild: (userId: number) => void): void {
@@ -121,6 +131,10 @@ async function init(): Promise<void> {
         });
       },
       switchToSettings,
+      () => {
+        nav?.setActive(null, false, true);
+        showPhoneBook(app!);
+      },
     );
     topNavEl!.appendChild(nav);
     topNavEl!.hidden = false;

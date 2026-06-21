@@ -90,7 +90,20 @@ export function createGroceryView(api: GroceryViewApi): HTMLElement {
         }),
       );
     } else {
-      content.appendChild(createInventoryList(activeTab, api.inventory));
+      content.appendChild(
+        createInventoryList(activeTab, api.inventory, {
+          onAddToShoppingList: async (item: InventoryItem) => {
+            await api.grocery.create({
+              name: item.name,
+              category: item.category,
+              checked: false,
+              source: 'manual',
+              meal_plan_id: null,
+            });
+            await api.inventory.remove(item.id);
+          },
+        }),
+      );
     }
   }
 
